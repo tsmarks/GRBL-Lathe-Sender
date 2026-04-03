@@ -1,0 +1,704 @@
+<Window x:Class="GRBL_Lathe_Control.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:GRBL_Lathe_Control.Controls"
+        mc:Ignorable="d"
+        Title="GRBL Lathe Control"
+        Width="1500"
+        Height="920"
+        MinWidth="1260"
+        MinHeight="820"
+        WindowStartupLocation="CenterScreen">
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#08111F" Offset="0"/>
+            <GradientStop Color="#111E31" Offset="0.55"/>
+            <GradientStop Color="#172942" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Background>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#142238"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#223654"/>
+        <SolidColorBrush x:Key="SectionTitleBrush" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="LabelBrush" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="ValueBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="InputBackgroundBrush" Color="#0C1728"/>
+        <SolidColorBrush x:Key="InputBorderBrush" Color="#2F4769"/>
+        <SolidColorBrush x:Key="InputHoverBrush" Color="#16253A"/>
+        <SolidColorBrush x:Key="InputSelectionBrush" Color="#1E3553"/>
+        <SolidColorBrush x:Key="PrimaryButtonBrush" Color="#F97316"/>
+        <SolidColorBrush x:Key="PrimaryButtonForegroundBrush" Color="#0F172A"/>
+        <SolidColorBrush x:Key="SecondaryButtonBrush" Color="#1E3553"/>
+
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="20"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="0,0,0,18"/>
+        </Style>
+
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource SectionTitleBrush}"/>
+            <Setter Property="FontFamily" Value="Bahnschrift"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="LabelTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <Style x:Key="AxisValueStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="34"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="DroAxisValueStyle" TargetType="TextBlock" BasedOn="{StaticResource AxisValueStyle}">
+            <Setter Property="FontSize" Value="44"/>
+        </Style>
+
+        <Style x:Key="BodyTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style x:Key="LimitBadgeStyle" TargetType="Border">
+            <Setter Property="Background" Value="#7C2D12"/>
+            <Setter Property="BorderBrush" Value="#FB923C"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="Margin" Value="0,10,0,0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+
+        <Style x:Key="InputComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="{StaticResource InputHoverBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource InputSelectionBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource SectionTitleBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="InputComboBoxToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToggleBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="28"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="1"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="1,0,0,0">
+                                    <Path HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Data="M 0 0 L 4 4 L 8 0 Z"
+                                          Fill="{TemplateBinding Foreground}"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource SectionTitleBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource SectionTitleBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ToggleBorder" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource InputComboBoxItemStyle}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton"
+                                          Style="{StaticResource InputComboBoxToggleStyle}"
+                                          Background="{TemplateBinding Background}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press"/>
+
+                            <ContentPresenter Margin="10,0,34,0"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   Placement="Bottom"
+                                   PopupAnimation="Slide">
+                                <Border x:Name="DropDownBorder"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                        Margin="0,4,0,0"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4"
+                                        SnapsToDevicePixels="True">
+                                    <ScrollViewer SnapsToDevicePixels="True">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="32"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="ToggleButton" Property="BorderBrush" Value="{StaticResource SectionTitleBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryButtonBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryButtonForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryButtonBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,9"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="FontFamily" Value="Bahnschrift"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SecondaryButtonBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="FontFamily" Value="Bahnschrift"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="PreviewTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style x:Key="PreviewTabItemStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource ValueBrush}"/>
+            <Setter Property="Background" Value="#102033"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10,10,0,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ContentSource="Header"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource CardBackgroundBrush}"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource SectionTitleBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource SectionTitleBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="18"/>
+            <RowDefinition Height="366*"/>
+            <RowDefinition Height="379*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}" Margin="467,10,0,200">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="GRBL Lathe Controller" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                    <TextBlock Text="Simple DRO, touch-off, jog, file playback, and 2D X/Z path preview for GRBL-driven lathes."
+                               Style="{StaticResource LabelTextStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="COM Port" Style="{StaticResource LabelTextStyle}"/>
+                        <ComboBox Width="120"
+                                  Style="{StaticResource InputComboBoxStyle}"
+                                  ItemsSource="{Binding AvailablePorts}"
+                                  SelectedItem="{Binding SelectedPort}"/>
+                    </StackPanel>
+
+                    <Button Content="Refresh"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Scan the computer for available serial COM ports."
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,12,8"
+                            Command="{Binding RefreshPortsCommand}"/>
+
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="Baud" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBox Width="90"
+                                 Style="{StaticResource InputTextBoxStyle}"
+                                 Margin="0"
+                                 Text="{Binding BaudRateInput, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <Button Content="Connect"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            ToolTip="Open the selected serial port and start talking to the GRBL controller."
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,8,8"
+                            Command="{Binding ConnectCommand}"/>
+
+                    <Button Content="Disconnect"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Close the serial connection to the controller."
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,8,8"
+                            Command="{Binding DisconnectCommand}"/>
+
+                    <Button Content="Home"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Run the GRBL homing cycle to move the machine to its home switches."
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,8,8"
+                            Command="{Binding HomeCommand}"/>
+
+                    <Button Content="Reset"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Send GRBL soft reset (Ctrl+X) to restart the controller."
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,8,8"
+                            Command="{Binding SoftResetCommand}"/>
+
+                    <Button Content="Dual Screen"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Open the touch-friendly control screen and the data screen in separate windows."
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,8"
+                            Click="OpenDualScreen_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,18,0,0" Grid.RowSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="450"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" Margin="0,-26,10,0">
+                <StackPanel>
+
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Work Offsets" Style="{StaticResource SectionTitleStyle}"/>
+                            <Grid Margin="0,14,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Set Work X" Style="{StaticResource LabelTextStyle}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                             Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Set X" Style="{StaticResource PrimaryButtonStyle}" ToolTip="Set the current X work coordinate to the entered value." Command="{Binding SetWorkXCommand}"/>
+                                        <Button Content="Zero X" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Set the current X work coordinate to zero." Command="{Binding ZeroXCommand}" Margin="0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Set Work Z" Style="{StaticResource LabelTextStyle}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                             Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Set Z" Style="{StaticResource PrimaryButtonStyle}" ToolTip="Set the current Z work coordinate to the entered value." Command="{Binding SetWorkZCommand}"/>
+                                        <Button Content="Zero Z" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Set the current Z work coordinate to zero." Command="{Binding ZeroZCommand}" Margin="0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Margin="0,4,0,14" Background="#2B405D"/>
+
+                            <TextBlock Text="Diameter Touch-Off Helper" Style="{StaticResource SectionTitleStyle}" FontSize="16"/>
+                            <TextBlock Text="Enter touched diameter in mm. The controller sets X to radius (diameter / 2) to help center on the part."
+                                       Style="{StaticResource LabelTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,10,0,8"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0"
+                                         Style="{StaticResource InputTextBoxStyle}"
+                                         Margin="0,0,12,0"
+                                         Text="{Binding DiameterTouchOffInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Grid.Column="1"
+                                        Content="Set X = Dia / 2"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        ToolTip="Convert the entered diameter to radius and apply it as the X work coordinate."
+                                        Command="{Binding SetXFromDiameterCommand}"/>
+                                <Button Grid.Column="2"
+                                        Content="Zero X/Z"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        ToolTip="Set both X and Z work coordinates to zero."
+                                        Margin="4,0,0,0"
+                                        Command="{Binding ZeroAllCommand}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardBorderStyle}" Height="226" Width="445">
+                        <StackPanel>
+                            <TextBlock Text="Manual Jog" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="X uses 0.01 to 10 mm steps. Z uses 0.01 to 100 mm steps."
+                                       Style="{StaticResource LabelTextStyle}"
+                                       Margin="0,8,0,14"/>
+
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="88"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="132"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="X Step (mm)" Style="{StaticResource LabelTextStyle}"/>
+                                    <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                                              Height="40"
+                                              ItemsSource="{Binding XJogSteps}"
+                                              SelectedItem="{Binding SelectedXJogStep}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="X Feed" Style="{StaticResource LabelTextStyle}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                             Margin="0"
+                                             Text="{Binding XJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <Button Content="-X" Width="64" Height="42" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Jog the X axis in the negative direction using the selected step and feed." Command="{Binding JogXNegativeCommand}"/>
+                                    <Button Content="+X" Width="64" Height="42" Style="{StaticResource PrimaryButtonStyle}" ToolTip="Jog the X axis in the positive direction using the selected step and feed." Margin="0" Command="{Binding JogXPositiveCommand}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="88"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="132"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Z Step (mm)" Style="{StaticResource LabelTextStyle}"/>
+                                    <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                                              Height="40"
+                                              ItemsSource="{Binding ZJogSteps}"
+                                              SelectedItem="{Binding SelectedZJogStep}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Z Feed" Style="{StaticResource LabelTextStyle}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                             Margin="0"
+                                             Text="{Binding ZJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <Button Content="-Z" Width="64" Height="42" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Jog the Z axis in the negative direction using the selected step and feed." Command="{Binding JogZNegativeCommand}"/>
+                                    <Button Content="+Z" Width="64" Height="42" Style="{StaticResource PrimaryButtonStyle}" ToolTip="Jog the Z axis in the positive direction using the selected step and feed." Margin="0" Command="{Binding JogZPositiveCommand}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Spindle Control" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="Manual spindle control using GRBL spindle commands. The slider adjusts the S-value sent with M3."
+                                       Style="{StaticResource LabelTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,10,0,12"/>
+
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock Text="Speed (S)" Style="{StaticResource LabelTextStyle}" Margin="0"/>
+                                <TextBlock Text="{Binding SelectedSpindleSpeedText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                            </DockPanel>
+
+                            <Slider Minimum="0"
+                                    Maximum="1000"
+                                    TickFrequency="25"
+                                    SmallChange="1"
+                                    LargeChange="25"
+                                    Margin="0,0,0,12"
+                                    IsEnabled="{Binding CanManualSpindleControl}"
+                                    Value="{Binding SelectedSpindleSpeed}"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Start / Update"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        ToolTip="Send M3 with the selected S-value."
+                                        Command="{Binding ApplySpindleSpeedCommand}"/>
+                                <Button Content="Stop Spindle"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        ToolTip="Send M5 to stop the spindle."
+                                        Margin="0"
+                                        Command="{Binding StopSpindleCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Program Playback" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="{Binding ProgramSummaryText}" Style="{StaticResource LabelTextStyle}" TextWrapping="Wrap" Margin="0,10,0,8"/>
+                            <TextBlock Text="{Binding ProgramPath}" Style="{StaticResource BodyTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,0,0,12"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Button Content="Load Program" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Choose a G-code file and load it into the preview and playback queue." Command="{Binding LoadProgramCommand}"/>
+                                <Button Content="Run" Style="{StaticResource PrimaryButtonStyle}" ToolTip="Start streaming the loaded G-code program to the controller." Command="{Binding StartProgramCommand}"/>
+                                <Button Content="{Binding PauseResumeLabel}" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Pause the running program with feed hold, or resume it if already paused." Command="{Binding PauseResumeProgramCommand}"/>
+                                <Button Content="Stop" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Cancel program playback and send a GRBL soft reset." Margin="0" Command="{Binding StopProgramCommand}"/>
+                            </StackPanel>
+
+                            <ProgressBar Height="10"
+                                         Maximum="100"
+                                         Value="{Binding ProgramProgressPercent, Mode=OneWay}"
+                                         Margin="0,0,0,10"/>
+                            <TextBlock Text="{Binding ProgramProgressText}" Style="{StaticResource BodyTextStyle}"/>
+
+                            <Separator Margin="0,16,0,14" Background="#2B405D"/>
+
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock Text="Feed Override" Style="{StaticResource LabelTextStyle}" Margin="0"/>
+                                <TextBlock Text="{Binding FeedOverrideText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                            </DockPanel>
+                            <TextBlock Text="Adjusts G-code feed moves from 25% to 200% of the programmed feed rate."
+                                       Style="{StaticResource LabelTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10"/>
+                            <Slider Minimum="25"
+                                    Maximum="200"
+                                    TickFrequency="5"
+                                    SmallChange="1"
+                                    LargeChange="10"
+                                    IsEnabled="{Binding IsConnected}"
+                                    Value="{Binding FeedOverridePercent}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardBorderStyle}" Margin="0">
+                        <StackPanel>
+                            <TextBlock Text="Controller Log" Style="{StaticResource SectionTitleStyle}"/>
+                            <ListBox ItemsSource="{Binding ControllerLog}"
+                                     Height="220"
+                                     Margin="0,14,0,0"
+                                     Background="#0C1728"
+                                     BorderBrush="{StaticResource InputBorderBrush}"
+                                     BorderThickness="1"
+                                     Foreground="{StaticResource ValueBrush}"
+                                     FontFamily="Consolas"
+                                     FontSize="12"
+                                     Padding="6"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <controls:ToolDataPane Grid.Column="2"
+                                   Margin="0,-207,0,0"/>
+        </Grid>
+        <Border Style="{StaticResource CardBorderStyle}"
+                Width="450"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Margin="0,0,0,18">
+            <StackPanel>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="#0E1827" CornerRadius="14" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="X Axis" Style="{StaticResource SectionTitleStyle}" FontSize="16"/>
+                            <Border Style="{StaticResource LimitBadgeStyle}"
+                                    Visibility="{Binding XLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="X LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="11" FontWeight="Bold"/>
+                            </Border>
+                            <TextBlock Text="Work Coordinate" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,4"/>
+                            <TextBlock Text="{Binding WorkX, StringFormat=\{0:F3\} mm}" Style="{StaticResource DroAxisValueStyle}"/>
+                            <TextBlock Text="{Binding MachineX, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="#0E1827" CornerRadius="14" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Z Axis" Style="{StaticResource SectionTitleStyle}" FontSize="16"/>
+                            <Border Style="{StaticResource LimitBadgeStyle}"
+                                    Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="11" FontWeight="Bold"/>
+                            </Border>
+                            <TextBlock Text="Work Coordinate" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,4"/>
+                            <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource DroAxisValueStyle}"/>
+                            <TextBlock Text="{Binding MachineZ, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="14"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock Text="Connection" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBlock Text="{Binding ConnectionStatus}" Style="{StaticResource BodyTextStyle}" FontSize="14" FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Controller State" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBlock Text="{Binding ControllerState}" Style="{StaticResource BodyTextStyle}" FontSize="14" FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="2"
+                            Grid.ColumnSpan="2"
+                            Background="#0E1827"
+                            BorderBrush="{StaticResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12"
+                            Margin="0,4,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Master Tool Offset" Style="{StaticResource LabelTextStyle}" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding MasterRelativeOffsetText}"
+                                       Style="{StaticResource BodyTextStyle}"
+                                       FontFamily="Consolas"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
