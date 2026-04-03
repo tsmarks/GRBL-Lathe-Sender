@@ -68,16 +68,18 @@
 
                     <StackPanel>
                         <TextBlock Text="Tool Offsets" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
-                            <TextBlock Text="Add tools manually or let the program load create missing tool rows. Set stores the current work X/Z difference from the master tool, and Use shifts the work zero to match the selected tool."
-                                       Style="{StaticResource LabelTextStyle}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,8,0,0"/>
+                        <TextBlock Text="Add tools manually or let the program load create missing tool rows. T0 is the master tool at X 0 / Z 0. Set stores the tool-tip offset from T0, so it saves the opposite of the displayed work delta while you touch off the new tool. Use swaps from the current tool to the selected tool by applying the delta between their stored offsets."
+                                   Style="{StaticResource LabelTextStyle}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0"/>
                     </StackPanel>
 
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="160"/>
                             <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="16"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
@@ -92,6 +94,15 @@
                                 Margin="0"
                                 ToolTip="Add a new tool offset row without overwriting any existing values."
                                 Command="{Binding AddToolCommand}"/>
+                        <CheckBox Grid.Column="4"
+                                  Content="Locked"
+                                  IsChecked="{Binding IsToolOffsetsLocked, Mode=TwoWay}"
+                                  VerticalAlignment="Center"
+                                  ToolTip="Hide the Set and Delete buttons to avoid accidental tool table edits."
+                                  Foreground="{StaticResource ValueBrush}"
+                                  FontFamily="Bahnschrift"
+                                  FontSize="14"
+                                  FontWeight="SemiBold"/>
                     </Grid>
 
                     <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
@@ -112,8 +123,6 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="12"/>
                                                 <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="8"/>
-                                                <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel VerticalAlignment="Center">
@@ -126,38 +135,69 @@
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="X Offset" Style="{StaticResource LabelTextStyle}"/>
+                                                <TextBlock Text="X Tip Offset" Style="{StaticResource LabelTextStyle}"/>
                                                 <TextBox Style="{StaticResource InputTextBoxStyle}"
                                                          Margin="0"
                                                          Text="{Binding XOffsetInput, UpdateSourceTrigger=PropertyChanged}"/>
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="3">
-                                                <TextBlock Text="Z Offset" Style="{StaticResource LabelTextStyle}"/>
+                                                <TextBlock Text="Z Tip Offset" Style="{StaticResource LabelTextStyle}"/>
                                                 <TextBox Style="{StaticResource InputTextBoxStyle}"
                                                          Margin="0"
                                                          Text="{Binding ZOffsetInput, UpdateSourceTrigger=PropertyChanged}"/>
                                             </StackPanel>
 
-                                            <Button Grid.Column="5"
-                                                    Content="Set"
-                                                    Width="66"
-                                                    Height="40"
-                                                    VerticalAlignment="Bottom"
-                                                    Style="{StaticResource SecondaryButtonStyle}"
-                                                    Margin="0"
-                                                    ToolTip="Store the current displayed work X and Z as this tool's offset from the master tool."
-                                                    Command="{Binding SetCommand}"/>
+                                            <StackPanel Grid.Column="5"
+                                                        Orientation="Horizontal"
+                                                        VerticalAlignment="Bottom">
+                                                <Button Content="Set"
+                                                        Width="66"
+                                                        Height="40"
+                                                        Margin="0,0,8,0"
+                                                        ToolTip="Store this tool's tip offset from T0 by inverting the currently displayed work X and Z."
+                                                        Command="{Binding SetCommand}">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DataContext.IsToolOffsetsLocked, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
 
-                                            <Button Grid.Column="7"
-                                                    Content="Use"
-                                                    Width="66"
-                                                    Height="40"
-                                                    VerticalAlignment="Bottom"
-                                                    Style="{StaticResource PrimaryButtonStyle}"
-                                                    Margin="0"
-                                                    ToolTip="Shift the active work zero by this tool's stored offset from the master tool."
-                                                    Command="{Binding UseCommand}"/>
+                                                <Button Content="Use"
+                                                        Width="66"
+                                                        Height="40"
+                                                        Margin="0"
+                                                        ToolTip="Shift the active work zero using this tool's stored tip offset from T0."
+                                                        Command="{Binding UseCommand}"
+                                                        Style="{StaticResource PrimaryButtonStyle}"/>
+
+                                                <Button Content="Delete"
+                                                        Width="74"
+                                                        Height="40"
+                                                        Margin="8,0,0,0"
+                                                        ToolTip="Remove this tool from the saved tool-offset list."
+                                                        Command="{Binding DeleteCommand}">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding DataContext.IsToolOffsetsLocked, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False"/>
+                                                                        <Condition Binding="{Binding CanDeleteTool}" Value="True"/>
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </MultiDataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

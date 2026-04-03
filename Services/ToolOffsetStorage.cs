@@ -47,7 +47,7 @@ public static class ToolOffsetStorage
 
             if (columns.Count < 3 ||
                 !int.TryParse(columns[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var toolNumber) ||
-                toolNumber <= 0)
+                toolNumber < 0)
             {
                 continue;
             }

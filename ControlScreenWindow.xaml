@@ -102,12 +102,22 @@
                         <TextBlock Text="{Binding ControllerState}" Style="{StaticResource BodyTextStyle}" FontSize="15" FontWeight="SemiBold"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="Master Offset" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBlock Text="{Binding ActiveToolText}"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontFamily="Consolas"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="Active Tool Tip Offset" Style="{StaticResource LabelTextStyle}"/>
                         <TextBlock Text="{Binding MasterRelativeOffsetText}"
                                    Style="{StaticResource BodyTextStyle}"
                                    FontFamily="Consolas"
                                    FontSize="15"
                                    FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding CurrentWorkOffsetText}"
+                                   Style="{StaticResource LabelTextStyle}"
+                                   FontFamily="Consolas"
+                                   Margin="0,6,0,0"/>
                     </StackPanel>
                     <Button Content="Home"
                             Style="{StaticResource TouchSecondaryButtonStyle}"

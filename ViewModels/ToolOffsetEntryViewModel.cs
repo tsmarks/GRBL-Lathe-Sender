@@ -9,22 +9,28 @@ public sealed class ToolOffsetEntryViewModel : ObservableObject
 {
     private readonly Action<ToolOffsetEntryViewModel> _captureCurrentPosition;
     private readonly Func<ToolOffsetEntryViewModel, Task> _useOffsetAsync;
+    private readonly Action<ToolOffsetEntryViewModel> _deleteOffset;
     private string _xOffsetInput = "0";
     private string _zOffsetInput = "0";
 
     public ToolOffsetEntryViewModel(
         int toolNumber,
         Action<ToolOffsetEntryViewModel> captureCurrentPosition,
-        Func<ToolOffsetEntryViewModel, Task> useOffsetAsync)
+        Func<ToolOffsetEntryViewModel, Task> useOffsetAsync,
+        Action<ToolOffsetEntryViewModel> deleteOffset)
     {
         ToolNumber = toolNumber;
         _captureCurrentPosition = captureCurrentPosition;
         _useOffsetAsync = useOffsetAsync;
+        _deleteOffset = deleteOffset;
         SetCommand = new RelayCommand(() => _captureCurrentPosition(this));
         UseCommand = new AsyncRelayCommand(() => _useOffsetAsync(this));
+        DeleteCommand = new RelayCommand(() => _deleteOffset(this));
     }
 
     public int ToolNumber { get; }
+
+    public bool CanDeleteTool => ToolNumber != 0;
 
     public string XOffsetInput
     {
@@ -41,6 +47,8 @@ public sealed class ToolOffsetEntryViewModel : ObservableObject
     public RelayCommand SetCommand { get; }
 
     public AsyncRelayCommand UseCommand { get; }
+
+    public RelayCommand DeleteCommand { get; }
 
     public void CaptureOffsets(double workX, double workZ)
     {

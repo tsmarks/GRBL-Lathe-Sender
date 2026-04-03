@@ -42,12 +42,22 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="Master Offset" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBlock Text="{Binding ActiveToolText}"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontFamily="Consolas"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="Active Tool Tip Offset" Style="{StaticResource LabelTextStyle}"/>
                         <TextBlock Text="{Binding MasterRelativeOffsetText}"
                                    Style="{StaticResource BodyTextStyle}"
                                    FontFamily="Consolas"
                                    FontSize="14"
                                    FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding CurrentWorkOffsetText}"
+                                   Style="{StaticResource LabelTextStyle}"
+                                   FontFamily="Consolas"
+                                   Margin="0,6,0,0"/>
                     </StackPanel>
                     <Button Content="Single Screen"
                             Style="{StaticResource SecondaryButtonStyle}"

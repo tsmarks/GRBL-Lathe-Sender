@@ -56,7 +56,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private double _programProgressPercent;
     private IReadOnlyList<ToolPathSegment> _toolPathSegments = Array.Empty<ToolPathSegment>();
     private CancellationTokenSource? _feedOverrideAdjustmentCancellation;
+    private bool _isToolOffsetsLocked = true;
     private bool _suppressToolOffsetPersistence;
+    private int _activeToolNumber;
 
     public MainViewModel()
     {
@@ -92,6 +94,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _grblClient.MessageReceived += OnGrblMessageReceived;
 
         LoadPersistedToolOffsets();
+        EnsureMasterToolEntry();
         RefreshPorts();
     }
 
@@ -210,7 +213,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _workX, value))
             {
-                OnPropertyChanged(nameof(MasterRelativeOffsetText));
+                OnPropertyChanged(nameof(CurrentWorkOffsetText));
             }
         }
     }
@@ -222,12 +225,46 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _workZ, value))
             {
+                OnPropertyChanged(nameof(CurrentWorkOffsetText));
+            }
+        }
+    }
+
+    public int ActiveToolNumber
+    {
+        get => _activeToolNumber;
+        private set
+        {
+            if (SetProperty(ref _activeToolNumber, value))
+            {
+                OnPropertyChanged(nameof(ActiveToolText));
                 OnPropertyChanged(nameof(MasterRelativeOffsetText));
             }
         }
     }
 
-    public string MasterRelativeOffsetText => $"T0 master-relative X {WorkX:0.###} mm | Z {WorkZ:0.###} mm";
+    public string ActiveToolText => $"Active tool T{ActiveToolNumber}";
+
+    public string MasterRelativeOffsetText
+    {
+        get
+        {
+            if (!TryGetStoredToolOffsets(ActiveToolNumber, out var xOffset, out var zOffset))
+            {
+                return $"T{ActiveToolNumber} tool-tip offset unavailable";
+            }
+
+            return $"T{ActiveToolNumber} tip vs T0: X {xOffset:0.###} mm | Z {zOffset:0.###} mm";
+        }
+    }
+
+    public string CurrentWorkOffsetText => $"Displayed work X {WorkX:0.###} mm | Z {WorkZ:0.###} mm";
+
+    public bool IsToolOffsetsLocked
+    {
+        get => _isToolOffsetsLocked;
+        set => SetProperty(ref _isToolOffsetsLocked, value);
+    }
 
     public bool XLimitPinHigh
     {
@@ -780,6 +817,25 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void EnsureMasterToolEntry()
+    {
+        var (masterEntry, created) = AddOrGetToolOffsetEntry(0);
+        if (masterEntry.XOffsetInput != "0")
+        {
+            masterEntry.XOffsetInput = "0";
+        }
+
+        if (masterEntry.ZOffsetInput != "0")
+        {
+            masterEntry.ZOffsetInput = "0";
+        }
+
+        if (created)
+        {
+            AddLog("Added master tool T0.");
+        }
+    }
+
     private void PersistToolOffsets()
     {
         if (_suppressToolOffsetPersistence)
@@ -813,6 +869,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (eventArgs.PropertyName is nameof(ToolOffsetEntryViewModel.XOffsetInput) or nameof(ToolOffsetEntryViewModel.ZOffsetInput))
         {
             PersistToolOffsets();
+            OnPropertyChanged(nameof(MasterRelativeOffsetText));
         }
     }
 
@@ -820,7 +877,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (!TryParseToolNumber(NewToolNumberInput, out var toolNumber))
         {
-            ShowValidationError("Enter a positive tool number.");
+            ShowValidationError("Enter a non-negative tool number.");
             return;
         }
 
@@ -1104,7 +1161,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return (existingEntry, false);
         }
 
-        var newEntry = new ToolOffsetEntryViewModel(toolNumber, CaptureToolOffsetFromCurrentPosition, ApplyToolOffsetAsync);
+        var newEntry = new ToolOffsetEntryViewModel(toolNumber, CaptureToolOffsetFromCurrentPosition, ApplyToolOffsetAsync, DeleteToolOffsetEntry);
         var insertIndex = 0;
         while (insertIndex < ToolOffsets.Count && ToolOffsets[insertIndex].ToolNumber < toolNumber)
         {
@@ -1125,8 +1182,35 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        toolEntry.CaptureOffsets(WorkX, WorkZ);
-        AddLog($"Captured current work offset delta for T{toolEntry.ToolNumber}.");
+        if (toolEntry.ToolNumber == 0)
+        {
+            toolEntry.CaptureOffsets(0, 0);
+            AddLog("T0 remains the master tool at X 0 / Z 0.");
+            return;
+        }
+
+        toolEntry.CaptureOffsets(-WorkX, -WorkZ);
+        AddLog($"Captured T{toolEntry.ToolNumber} tool-tip offset from T0.");
+    }
+
+    private void DeleteToolOffsetEntry(ToolOffsetEntryViewModel toolEntry)
+    {
+        if (toolEntry.ToolNumber == 0)
+        {
+            ShowValidationError("T0 is the master tool and cannot be removed.");
+            return;
+        }
+
+        if (toolEntry.ToolNumber == ActiveToolNumber)
+        {
+            ShowValidationError($"Use T0 or another tool before deleting active tool T{toolEntry.ToolNumber}.");
+            return;
+        }
+
+        UnregisterToolOffsetEntry(toolEntry);
+        ToolOffsets.Remove(toolEntry);
+        PersistToolOffsets();
+        AddLog($"Deleted tool T{toolEntry.ToolNumber} from the offset list.");
     }
 
     private Task ApplyToolOffsetAsync(ToolOffsetEntryViewModel toolEntry)
@@ -1142,25 +1226,52 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (!toolEntry.TryGetOffsets(out var toolMachineX, out var toolMachineZ))
+        if (!TryGetStoredToolOffsets(toolEntry.ToolNumber, out var targetToolX, out var targetToolZ))
         {
             ShowValidationError($"Enter valid X and Z offsets for T{toolEntry.ToolNumber}.");
             return;
         }
 
+        if (!TryGetStoredToolOffsets(ActiveToolNumber, out var currentToolX, out var currentToolZ))
+        {
+            ShowValidationError($"Enter valid X and Z offsets for the active tool T{ActiveToolNumber} before switching tools.");
+            return;
+        }
+
         try
         {
-            var desiredWorkX = WorkX - toolMachineX;
-            var desiredWorkZ = WorkZ - toolMachineZ;
+            var desiredWorkX = WorkX + (targetToolX - currentToolX);
+            var desiredWorkZ = WorkZ + (targetToolZ - currentToolZ);
             await _grblClient.SetWorkCoordinateOffsetAsync(desiredWorkX, desiredWorkZ);
             WorkX = desiredWorkX;
             WorkZ = desiredWorkZ;
+            ActiveToolNumber = toolEntry.ToolNumber;
             AddLog(successMessage);
         }
         catch (Exception exception)
         {
             ShowOperationError("Tool offset apply failed", exception);
         }
+    }
+
+    private bool TryGetStoredToolOffsets(int toolNumber, out double xOffset, out double zOffset)
+    {
+        if (toolNumber == 0)
+        {
+            xOffset = 0;
+            zOffset = 0;
+            return true;
+        }
+
+        var toolEntry = ToolOffsets.FirstOrDefault(entry => entry.ToolNumber == toolNumber);
+        if (toolEntry is not null && toolEntry.TryGetOffsets(out xOffset, out zOffset))
+        {
+            return true;
+        }
+
+        xOffset = 0;
+        zOffset = 0;
+        return false;
     }
 
     private void OnGrblStatusReceived(object? sender, GrblStatus status)
@@ -1355,12 +1466,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private static bool TryParseToolNumber(string rawValue, out int toolNumber)
     {
-        if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out toolNumber) && toolNumber > 0)
+        if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out toolNumber) && toolNumber >= 0)
         {
             return true;
         }
 
-        if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.CurrentCulture, out toolNumber) && toolNumber > 0)
+        if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.CurrentCulture, out toolNumber) && toolNumber >= 0)
         {
             return true;
         }
