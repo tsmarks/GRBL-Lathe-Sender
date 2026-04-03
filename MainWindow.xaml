@@ -10,6 +10,7 @@
         Height="920"
         MinWidth="1260"
         MinHeight="820"
+        PreviewKeyDown="Window_PreviewKeyDown"
         WindowStartupLocation="CenterScreen">
     <Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -370,6 +371,13 @@
                             Margin="0,0,8,8"
                             Command="{Binding SoftResetCommand}"/>
 
+                    <CheckBox Content="Keyboard Control"
+                              Style="{StaticResource InlineCheckBoxStyle}"
+                              ToolTip="Enable keyboard jog controls: left/right jog, up/down step, A axis switch, comma/period feed adjust."
+                              VerticalAlignment="Bottom"
+                              Margin="0,0,12,14"
+                              IsChecked="{Binding IsKeyboardControlEnabled}"/>
+
                     <Button Content="Dual Screen"
                             Style="{StaticResource SecondaryButtonStyle}"
                             ToolTip="Open the touch-friendly control screen and the data screen in separate windows."
@@ -705,6 +713,42 @@
                                        Style="{StaticResource LabelTextStyle}"
                                        FontFamily="Consolas"
                                        Margin="0,8,0,0"/>
+                            <DockPanel Margin="0,10,0,0">
+                                <CheckBox Content="Keyboard Control"
+                                          Style="{StaticResource InlineCheckBoxStyle}"
+                                          Margin="0"
+                                          IsChecked="{Binding IsKeyboardControlEnabled}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding KeyboardControlStatusText}"
+                                               Style="{StaticResource LabelTextStyle}"
+                                               Margin="0,0,14,0"
+                                               VerticalAlignment="Center"/>
+                                    <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardXAxisActive}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="X"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               FontFamily="Consolas"
+                                               FontWeight="SemiBold"
+                                               Margin="0,0,12,0"
+                                               VerticalAlignment="Center"/>
+                                    <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardZAxisActive}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Z"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               FontFamily="Consolas"
+                                               FontWeight="SemiBold"
+                                               Margin="0,0,12,0"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding KeyboardStepText}"
+                                               Style="{StaticResource LabelTextStyle}"
+                                               FontFamily="Consolas"
+                                               Margin="0,0,12,0"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding KeyboardFeedText}"
+                                               Style="{StaticResource LabelTextStyle}"
+                                               FontFamily="Consolas"
+                                               Margin="0"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DockPanel>
                         </StackPanel>
                     </Border>
                 </Grid>

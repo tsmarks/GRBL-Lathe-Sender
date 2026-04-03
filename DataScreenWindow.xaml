@@ -10,6 +10,7 @@
         Height="960"
         MinWidth="1200"
         MinHeight="860"
+        PreviewKeyDown="Window_PreviewKeyDown"
         WindowStartupLocation="CenterScreen">
     <Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -58,6 +59,36 @@
                                    Style="{StaticResource LabelTextStyle}"
                                    FontFamily="Consolas"
                                    Margin="0,6,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <CheckBox Content="Keyboard Control"
+                                      Style="{StaticResource InlineCheckBoxStyle}"
+                                      Margin="0,0,14,0"
+                                      IsChecked="{Binding IsKeyboardControlEnabled}"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardXAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="X"
+                                       Style="{StaticResource BodyTextStyle}"
+                                       FontFamily="Consolas"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,12,0"
+                                       VerticalAlignment="Center"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardZAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Z"
+                                       Style="{StaticResource BodyTextStyle}"
+                                       FontFamily="Consolas"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,12,0"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding KeyboardStepText}"
+                                       Style="{StaticResource LabelTextStyle}"
+                                       FontFamily="Consolas"
+                                       Margin="0,0,12,0"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding KeyboardFeedText}"
+                                       Style="{StaticResource LabelTextStyle}"
+                                       FontFamily="Consolas"
+                                       Margin="0"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
                     </StackPanel>
                     <Button Content="Single Screen"
                             Style="{StaticResource SecondaryButtonStyle}"

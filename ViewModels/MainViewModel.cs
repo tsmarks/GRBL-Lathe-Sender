@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
 using GRBL_Lathe_Control.Infrastructure;
 using GRBL_Lathe_Control.Models;
@@ -56,9 +57,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private double _programProgressPercent;
     private IReadOnlyList<ToolPathSegment> _toolPathSegments = Array.Empty<ToolPathSegment>();
     private CancellationTokenSource? _feedOverrideAdjustmentCancellation;
+    private bool _isKeyboardControlEnabled;
     private bool _isToolOffsetsLocked = true;
     private bool _suppressToolOffsetPersistence;
     private int _activeToolNumber;
+    private char _keyboardJogAxis = 'X';
 
     public MainViewModel()
     {
@@ -260,6 +263,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public string CurrentWorkOffsetText => $"Displayed work X {WorkX:0.###} mm | Z {WorkZ:0.###} mm";
 
+    public bool IsKeyboardControlEnabled
+    {
+        get => _isKeyboardControlEnabled;
+        set
+        {
+            if (SetProperty(ref _isKeyboardControlEnabled, value))
+            {
+                OnPropertyChanged(nameof(KeyboardControlStatusText));
+                OnPropertyChanged(nameof(IsKeyboardXAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardZAxisActive));
+            }
+        }
+    }
+
+    public string KeyboardControlStatusText => IsKeyboardControlEnabled ? "Keyboard control on" : "Keyboard control off";
+
+    public string KeyboardAxisText => $"Axis {KeyboardJogAxis}";
+
+    public bool IsKeyboardXAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'X';
+
+    public bool IsKeyboardZAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'Z';
+
+    public string KeyboardStepText => $"Step {GetActiveKeyboardStep():0.###} mm";
+
+    public string KeyboardFeedText => $"Feed {GetActiveKeyboardFeedText()}";
+
     public bool IsToolOffsetsLocked
     {
         get => _isToolOffsetsLocked;
@@ -369,13 +398,25 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string XJogFeedInput
     {
         get => _xJogFeedInput;
-        set => SetProperty(ref _xJogFeedInput, value);
+        set
+        {
+            if (SetProperty(ref _xJogFeedInput, value))
+            {
+                OnPropertyChanged(nameof(KeyboardFeedText));
+            }
+        }
     }
 
     public string ZJogFeedInput
     {
         get => _zJogFeedInput;
-        set => SetProperty(ref _zJogFeedInput, value);
+        set
+        {
+            if (SetProperty(ref _zJogFeedInput, value))
+            {
+                OnPropertyChanged(nameof(KeyboardFeedText));
+            }
+        }
     }
 
     public int SelectedSpindleSpeed
@@ -416,13 +457,41 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public double SelectedXJogStep
     {
         get => _selectedXJogStep;
-        set => SetProperty(ref _selectedXJogStep, value);
+        set
+        {
+            if (SetProperty(ref _selectedXJogStep, value))
+            {
+                OnPropertyChanged(nameof(KeyboardStepText));
+            }
+        }
     }
 
     public double SelectedZJogStep
     {
         get => _selectedZJogStep;
-        set => SetProperty(ref _selectedZJogStep, value);
+        set
+        {
+            if (SetProperty(ref _selectedZJogStep, value))
+            {
+                OnPropertyChanged(nameof(KeyboardStepText));
+            }
+        }
+    }
+
+    private char KeyboardJogAxis
+    {
+        get => _keyboardJogAxis;
+        set
+        {
+            if (SetProperty(ref _keyboardJogAxis, value))
+            {
+                OnPropertyChanged(nameof(KeyboardAxisText));
+                OnPropertyChanged(nameof(IsKeyboardXAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardZAxisActive));
+                OnPropertyChanged(nameof(KeyboardStepText));
+                OnPropertyChanged(nameof(KeyboardFeedText));
+            }
+        }
     }
 
     public string ProgramPath
@@ -778,6 +847,61 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         catch (Exception exception)
         {
             ShowOperationError("Spindle stop failed", exception);
+        }
+    }
+
+    public bool TryHandleKeyboardInput(Key key, ModifierKeys modifiers, bool isRepeat)
+    {
+        if (!IsKeyboardControlEnabled || modifiers != ModifierKeys.None)
+        {
+            return false;
+        }
+
+        switch (key)
+        {
+            case Key.Left:
+                ExecuteKeyboardJog(positiveDirection: false);
+                return true;
+            case Key.Right:
+                ExecuteKeyboardJog(positiveDirection: true);
+                return true;
+            case Key.Up:
+                if (!isRepeat)
+                {
+                    AdjustKeyboardStep(1);
+                }
+
+                return true;
+            case Key.Down:
+                if (!isRepeat)
+                {
+                    AdjustKeyboardStep(-1);
+                }
+
+                return true;
+            case Key.A:
+                if (!isRepeat)
+                {
+                    KeyboardJogAxis = KeyboardJogAxis == 'X' ? 'Z' : 'X';
+                }
+
+                return true;
+            case Key.OemComma:
+                if (!isRepeat)
+                {
+                    AdjustKeyboardFeed(-10);
+                }
+
+                return true;
+            case Key.OemPeriod:
+                if (!isRepeat)
+                {
+                    AdjustKeyboardFeed(10);
+                }
+
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -1213,6 +1337,85 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         AddLog($"Deleted tool T{toolEntry.ToolNumber} from the offset list.");
     }
 
+    private void ExecuteKeyboardJog(bool positiveDirection)
+    {
+        var command = KeyboardJogAxis switch
+        {
+            'X' => positiveDirection ? JogXPositiveCommand : JogXNegativeCommand,
+            _ => positiveDirection ? JogZPositiveCommand : JogZNegativeCommand
+        };
+
+        if (command.CanExecute(null))
+        {
+            command.Execute(null);
+        }
+    }
+
+    private void AdjustKeyboardStep(int direction)
+    {
+        if (KeyboardJogAxis == 'X')
+        {
+            SelectedXJogStep = GetAdjacentStep(XJogSteps, SelectedXJogStep, direction);
+            return;
+        }
+
+        SelectedZJogStep = GetAdjacentStep(ZJogSteps, SelectedZJogStep, direction);
+    }
+
+    private void AdjustKeyboardFeed(double delta)
+    {
+        if (KeyboardJogAxis == 'X')
+        {
+            XJogFeedInput = AdjustFeedInput(XJogFeedInput, delta);
+            return;
+        }
+
+        ZJogFeedInput = AdjustFeedInput(ZJogFeedInput, delta);
+    }
+
+    private double GetActiveKeyboardStep()
+    {
+        return KeyboardJogAxis == 'X' ? SelectedXJogStep : SelectedZJogStep;
+    }
+
+    private string GetActiveKeyboardFeedText()
+    {
+        return KeyboardJogAxis == 'X' ? XJogFeedInput : ZJogFeedInput;
+    }
+
+    private static double GetAdjacentStep(IReadOnlyList<double> steps, double currentStep, int direction)
+    {
+        if (steps.Count == 0)
+        {
+            return currentStep;
+        }
+
+        var nearestIndex = 0;
+        var nearestDistance = double.MaxValue;
+        for (var index = 0; index < steps.Count; index++)
+        {
+            var distance = Math.Abs(steps[index] - currentStep);
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestIndex = index;
+            }
+        }
+
+        var targetIndex = Math.Clamp(nearestIndex + direction, 0, steps.Count - 1);
+        return steps[targetIndex];
+    }
+
+    private static string AdjustFeedInput(string currentInput, double delta)
+    {
+        if (!TryParseFlexibleDouble(currentInput, out var currentFeed) || currentFeed <= 0)
+        {
+            currentFeed = 10;
+        }
+
+        return Math.Max(1, currentFeed + delta).ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
     private Task ApplyToolOffsetAsync(ToolOffsetEntryViewModel toolEntry)
     {
         return ApplyToolOffsetAsync(toolEntry, $"Applied offsets for T{toolEntry.ToolNumber}.");
@@ -1478,5 +1681,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         toolNumber = 0;
         return false;
+    }
+
+    private static bool TryParseFlexibleDouble(string rawValue, out double value)
+    {
+        if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+        {
+            return true;
+        }
+
+        return double.TryParse(rawValue, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
     }
 }
