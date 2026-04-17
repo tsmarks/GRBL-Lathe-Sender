@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.4.11626.88 stable
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GRBL Lathe Control", "GRBL Lathe Control.csproj", "{1B40B375-0CCF-4CD5-A932-066AC073F368}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GRBL Lathe Sender", "GRBL Lathe Sender.csproj", "{1B40B375-0CCF-4CD5-A932-066AC073F368}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

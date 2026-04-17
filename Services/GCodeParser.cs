@@ -15,9 +15,14 @@ public static class GCodeParser
 
     public static GCodeProgram ParseFile(string filePath)
     {
+        return ParseFile(filePath, MachineMode.Lathe);
+    }
+
+    public static GCodeProgram ParseFile(string filePath, MachineMode machineMode)
+    {
         var sourceLines = File.ReadAllLines(filePath);
         var blocks = ParseBlocks(sourceLines);
-        var segments = ParseSegments(sourceLines);
+        var segments = ParseSegments(sourceLines, machineMode);
         var toolNumbers = blocks
             .Where(block => block.ToolNumber.HasValue)
             .Select(block => block.ToolNumber!.Value)
@@ -68,16 +73,18 @@ public static class GCodeParser
         return blocks;
     }
 
-    private static IReadOnlyList<ToolPathSegment> ParseSegments(IEnumerable<string> sourceLines)
+    private static IReadOnlyList<ToolPathSegment> ParseSegments(IEnumerable<string> sourceLines, MachineMode machineMode)
     {
         var segments = new List<ToolPathSegment>();
 
         double currentX = 0;
+        double currentY = 0;
         double currentZ = 0;
         var absoluteCoordinates = true;
         var metricUnits = true;
         var motionMode = MotionMode.Rapid;
         var plane = GCodePlane.XZ;
+        var targetPlane = machineMode == MachineMode.Lathe ? GCodePlane.XZ : GCodePlane.XY;
 
         foreach (var rawLine in sourceLines)
         {
@@ -89,8 +96,10 @@ public static class GCodeParser
 
             MotionMode? explicitMotionMode = null;
             double? xWord = null;
+            double? yWord = null;
             double? zWord = null;
             double? iWord = null;
+            double? jWord = null;
             double? kWord = null;
 
             foreach (Match match in TokenRegex.Matches(line))
@@ -147,11 +156,17 @@ public static class GCodeParser
                     case 'X':
                         xWord = ConvertUnits(value, metricUnits);
                         break;
+                    case 'Y':
+                        yWord = ConvertUnits(value, metricUnits);
+                        break;
                     case 'Z':
                         zWord = ConvertUnits(value, metricUnits);
                         break;
                     case 'I':
                         iWord = ConvertUnits(value, metricUnits);
+                        break;
+                    case 'J':
+                        jWord = ConvertUnits(value, metricUnits);
                         break;
                     case 'K':
                         kWord = ConvertUnits(value, metricUnits);
@@ -164,33 +179,55 @@ public static class GCodeParser
                 motionMode = explicitMotionMode.Value;
             }
 
-            if (!xWord.HasValue && !zWord.HasValue)
-            {
-                continue;
-            }
-
             var nextX = xWord.HasValue ? ResolveCoordinate(currentX, xWord.Value, absoluteCoordinates) : currentX;
+            var nextY = yWord.HasValue ? ResolveCoordinate(currentY, yWord.Value, absoluteCoordinates) : currentY;
             var nextZ = zWord.HasValue ? ResolveCoordinate(currentZ, zWord.Value, absoluteCoordinates) : currentZ;
 
             if (motionMode is MotionMode.ClockwiseArc or MotionMode.CounterClockwiseArc &&
                 plane == GCodePlane.XZ &&
+                targetPlane == GCodePlane.XZ &&
+                (xWord.HasValue || zWord.HasValue) &&
                 (iWord.HasValue || kWord.HasValue))
             {
                 segments.AddRange(BuildArcSegments(
-                    currentX,
                     currentZ,
-                    nextX,
+                    currentX,
                     nextZ,
-                    iWord ?? 0,
+                    nextX,
                     kWord ?? 0,
+                    iWord ?? 0,
                     motionMode == MotionMode.ClockwiseArc));
             }
-            else if (!AreEqual(currentX, nextX) || !AreEqual(currentZ, nextZ))
+            else if (motionMode is MotionMode.ClockwiseArc or MotionMode.CounterClockwiseArc &&
+                plane == GCodePlane.XY &&
+                targetPlane == GCodePlane.XY &&
+                (xWord.HasValue || yWord.HasValue) &&
+                (iWord.HasValue || jWord.HasValue))
+            {
+                segments.AddRange(BuildArcSegments(
+                    currentX,
+                    currentY,
+                    nextX,
+                    nextY,
+                    iWord ?? 0,
+                    jWord ?? 0,
+                    motionMode == MotionMode.ClockwiseArc));
+            }
+            else if (targetPlane == GCodePlane.XZ &&
+                     (xWord.HasValue || zWord.HasValue) &&
+                     (!AreEqual(currentX, nextX) || !AreEqual(currentZ, nextZ)))
             {
                 segments.Add(new ToolPathSegment(currentZ, currentX, nextZ, nextX, motionMode == MotionMode.Rapid));
             }
+            else if (targetPlane == GCodePlane.XY &&
+                     (xWord.HasValue || yWord.HasValue) &&
+                     (!AreEqual(currentX, nextX) || !AreEqual(currentY, nextY)))
+            {
+                segments.Add(new ToolPathSegment(currentX, currentY, nextX, nextY, motionMode == MotionMode.Rapid));
+            }
 
             currentX = nextX;
+            currentY = nextY;
             currentZ = nextZ;
         }
 
@@ -198,43 +235,43 @@ public static class GCodeParser
     }
 
     private static IEnumerable<ToolPathSegment> BuildArcSegments(
-        double startX,
-        double startZ,
-        double endX,
-        double endZ,
-        double iOffset,
-        double kOffset,
+        double startHorizontal,
+        double startVertical,
+        double endHorizontal,
+        double endVertical,
+        double horizontalOffset,
+        double verticalOffset,
         bool clockwise)
     {
-        var centerX = startX + iOffset;
-        var centerZ = startZ + kOffset;
-        var radius = Math.Sqrt(Math.Pow(startX - centerX, 2) + Math.Pow(startZ - centerZ, 2));
+        var centerHorizontal = startHorizontal + horizontalOffset;
+        var centerVertical = startVertical + verticalOffset;
+        var radius = Math.Sqrt(Math.Pow(startHorizontal - centerHorizontal, 2) + Math.Pow(startVertical - centerVertical, 2));
 
         if (radius < 0.0001)
         {
-            yield return new ToolPathSegment(startZ, startX, endZ, endX, false);
+            yield return new ToolPathSegment(startHorizontal, startVertical, endHorizontal, endVertical, false);
             yield break;
         }
 
-        var startAngle = Math.Atan2(startX - centerX, startZ - centerZ);
-        var endAngle = Math.Atan2(endX - centerX, endZ - centerZ);
+        var startAngle = Math.Atan2(startVertical - centerVertical, startHorizontal - centerHorizontal);
+        var endAngle = Math.Atan2(endVertical - centerVertical, endHorizontal - centerHorizontal);
         var sweepAngle = NormalizeSweep(startAngle, endAngle, clockwise);
         var segmentCount = Math.Max(8, (int)Math.Ceiling(Math.Abs(sweepAngle) * radius / 1.5));
 
-        var previousX = startX;
-        var previousZ = startZ;
+        var previousHorizontal = startHorizontal;
+        var previousVertical = startVertical;
 
         for (var index = 1; index <= segmentCount; index++)
         {
             var progress = (double)index / segmentCount;
             var angle = startAngle + (sweepAngle * progress);
-            var pointX = centerX + (Math.Sin(angle) * radius);
-            var pointZ = centerZ + (Math.Cos(angle) * radius);
+            var pointHorizontal = centerHorizontal + (Math.Cos(angle) * radius);
+            var pointVertical = centerVertical + (Math.Sin(angle) * radius);
 
-            yield return new ToolPathSegment(previousZ, previousX, pointZ, pointX, false);
+            yield return new ToolPathSegment(previousHorizontal, previousVertical, pointHorizontal, pointVertical, false);
 
-            previousX = pointX;
-            previousZ = pointZ;
+            previousHorizontal = pointHorizontal;
+            previousVertical = pointVertical;
         }
     }
 

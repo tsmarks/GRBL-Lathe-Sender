@@ -21,6 +21,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly Dispatcher _dispatcher;
     private readonly GrblClient _grblClient = new();
+    private readonly MachineMode _machineMode;
 
     private CancellationTokenSource? _programCancellation;
     private GCodeProgram? _loadedProgram;
@@ -30,25 +31,47 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _connectionStatus = "Disconnected";
     private string _controllerState = "Offline";
     private string _workXInput = "0";
+    private string _workYInput = "0";
     private string _workZInput = "0";
     private string _diameterTouchOffInput = "0";
     private string _goToXInput = "1";
+    private string _goToYInput = "1";
     private string _goToZInput = "0";
     private string _newToolNumberInput = string.Empty;
     private string _xJogFeedInput = "200";
+    private string _yJogFeedInput = "200";
     private string _zJogFeedInput = "400";
+    private string _aJogFeedInput = "200";
+    private string _bJogFeedInput = "200";
+    private string _toolChangeXInput = "0";
+    private string _toolChangeYInput = "0";
+    private string _toolChangeSafeZInput = "0";
+    private string _probeTravelInput = "50";
+    private string _probeFeedInput = "100";
+    private string _probeRetractInput = "2";
+    private string _touchPlateThicknessInput = "10";
     private string _programPath = "No file loaded";
     private double _machineX;
+    private double _machineY;
     private double _machineZ;
+    private double _machineA;
+    private double _machineB;
     private double _workX;
+    private double _workY;
     private double _workZ;
+    private double _workA;
+    private double _workB;
     private bool _xLimitPinHigh;
+    private bool _yLimitPinHigh;
     private bool _zLimitPinHigh;
     private bool _isConnected;
     private bool _isProgramRunning;
     private bool _isProgramPaused;
     private double _selectedXJogStep = 0.1;
+    private double _selectedYJogStep = 0.1;
     private double _selectedZJogStep = 1;
+    private double _selectedAJogStep = 1;
+    private double _selectedBJogStep = 1;
     private int _selectedSpindleSpeed = 500;
     private int _feedOverridePercent = 100;
     private int _lastKnownFeedOverridePercent = 100;
@@ -63,31 +86,43 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _activeToolNumber;
     private char _keyboardJogAxis = 'X';
 
-    public MainViewModel()
+    public MainViewModel(MachineMode machineMode = MachineMode.Lathe)
     {
         _dispatcher = Application.Current.Dispatcher;
+        _machineMode = machineMode;
 
         RefreshPortsCommand = new RelayCommand(RefreshPorts);
         AddToolCommand = new RelayCommand(AddTool, CanAddTool);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
         DisconnectCommand = new AsyncRelayCommand(DisconnectAsync, () => IsConnected);
         ZeroXCommand = new AsyncRelayCommand(() => SetWorkCoordinateAsync(xValue: 0), CanOffsetOrJog);
+        ZeroYCommand = new AsyncRelayCommand(() => SetWorkCoordinateAsync(yValue: 0), CanOffsetOrJog);
         ZeroZCommand = new AsyncRelayCommand(() => SetWorkCoordinateAsync(zValue: 0), CanOffsetOrJog);
-        ZeroAllCommand = new AsyncRelayCommand(() => SetWorkCoordinateAsync(0, 0), CanOffsetOrJog);
+        ZeroAllCommand = new AsyncRelayCommand(() => SetWorkCoordinateAsync(xValue: 0, zValue: 0), CanOffsetOrJog);
         HomeCommand = new AsyncRelayCommand(HomeAsync, CanOffsetOrJog);
         SoftResetCommand = new AsyncRelayCommand(SoftResetAsync, () => IsConnected);
         ApplySpindleSpeedCommand = new AsyncRelayCommand(ApplySpindleSpeedAsync, CanAdjustManualSpindle);
         StopSpindleCommand = new AsyncRelayCommand(StopSpindleAsync, CanAdjustManualSpindle);
         SetWorkXCommand = new AsyncRelayCommand(SetWorkXAsync, CanOffsetOrJog);
+        SetWorkYCommand = new AsyncRelayCommand(SetWorkYAsync, CanOffsetOrJog);
         SetWorkZCommand = new AsyncRelayCommand(SetWorkZAsync, CanOffsetOrJog);
         SetXFromDiameterCommand = new AsyncRelayCommand(SetXFromDiameterAsync, CanOffsetOrJog);
         GoToXCommand = new AsyncRelayCommand(GoToXAsync, CanOffsetOrJog);
+        GoToYCommand = new AsyncRelayCommand(GoToYAsync, CanOffsetOrJog);
         GoToZCommand = new AsyncRelayCommand(GoToZAsync, CanOffsetOrJog);
         GoToRadiusPlusOneCommand = new AsyncRelayCommand(GoToRadiusPlusOneAsync, CanOffsetOrJog);
         JogXPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("X", SelectedXJogStep, XJogFeedInput), CanOffsetOrJog);
         JogXNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("X", -SelectedXJogStep, XJogFeedInput), CanOffsetOrJog);
+        JogYPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("Y", SelectedYJogStep, YJogFeedInput), CanOffsetOrJog);
+        JogYNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("Y", -SelectedYJogStep, YJogFeedInput), CanOffsetOrJog);
         JogZPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("Z", SelectedZJogStep, ZJogFeedInput), CanOffsetOrJog);
         JogZNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("Z", -SelectedZJogStep, ZJogFeedInput), CanOffsetOrJog);
+        JogAPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("A", SelectedAJogStep, AJogFeedInput), CanOffsetOrJog);
+        JogANegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("A", -SelectedAJogStep, AJogFeedInput), CanOffsetOrJog);
+        JogBPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("B", SelectedBJogStep, BJogFeedInput), CanOffsetOrJog);
+        JogBNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("B", -SelectedBJogStep, BJogFeedInput), CanOffsetOrJog);
+        CalibrateTouchPlateThicknessCommand = new RelayCommand(CalibrateTouchPlateThickness, () => IsMillMode && CanOffsetOrJog());
+        RunToolProbeCommand = new AsyncRelayCommand(RunToolProbeAsync, () => IsMillMode && CanOffsetOrJog());
         LoadProgramCommand = new RelayCommand(LoadProgram, () => !IsProgramRunning);
         StartProgramCommand = new AsyncRelayCommand(StartProgramAsync, CanStartProgram);
         PauseResumeProgramCommand = new AsyncRelayCommand(PauseResumeProgramAsync, CanPauseProgram);
@@ -96,8 +131,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _grblClient.StatusReceived += OnGrblStatusReceived;
         _grblClient.MessageReceived += OnGrblMessageReceived;
 
-        LoadPersistedToolOffsets();
-        EnsureMasterToolEntry();
+        if (IsLatheMode)
+        {
+            LoadPersistedToolOffsets();
+            EnsureMasterToolEntry();
+        }
+
         RefreshPorts();
     }
 
@@ -111,6 +150,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public IReadOnlyList<double> ZJogSteps { get; } = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100];
 
+    public IReadOnlyList<double> LinearJogSteps { get; } = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100];
+
+    public IReadOnlyList<double> RotaryJogSteps { get; } = [0.1, 0.5, 1, 5, 10, 45, 90];
+
     public RelayCommand RefreshPortsCommand { get; }
 
     public RelayCommand AddToolCommand { get; }
@@ -120,6 +163,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand DisconnectCommand { get; }
 
     public AsyncRelayCommand ZeroXCommand { get; }
+
+    public AsyncRelayCommand ZeroYCommand { get; }
 
     public AsyncRelayCommand ZeroZCommand { get; }
 
@@ -135,11 +180,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public AsyncRelayCommand SetWorkXCommand { get; }
 
+    public AsyncRelayCommand SetWorkYCommand { get; }
+
     public AsyncRelayCommand SetWorkZCommand { get; }
 
     public AsyncRelayCommand SetXFromDiameterCommand { get; }
 
     public AsyncRelayCommand GoToXCommand { get; }
+
+    public AsyncRelayCommand GoToYCommand { get; }
 
     public AsyncRelayCommand GoToZCommand { get; }
 
@@ -149,9 +198,25 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public AsyncRelayCommand JogXNegativeCommand { get; }
 
+    public AsyncRelayCommand JogYPositiveCommand { get; }
+
+    public AsyncRelayCommand JogYNegativeCommand { get; }
+
     public AsyncRelayCommand JogZPositiveCommand { get; }
 
     public AsyncRelayCommand JogZNegativeCommand { get; }
+
+    public AsyncRelayCommand JogAPositiveCommand { get; }
+
+    public AsyncRelayCommand JogANegativeCommand { get; }
+
+    public AsyncRelayCommand JogBPositiveCommand { get; }
+
+    public AsyncRelayCommand JogBNegativeCommand { get; }
+
+    public RelayCommand CalibrateTouchPlateThicknessCommand { get; }
+
+    public AsyncRelayCommand RunToolProbeCommand { get; }
 
     public RelayCommand LoadProgramCommand { get; }
 
@@ -197,16 +262,42 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _controllerState, value);
     }
 
+    public MachineMode MachineMode => _machineMode;
+
+    public bool IsLatheMode => _machineMode == MachineMode.Lathe;
+
+    public bool IsMillMode => _machineMode == MachineMode.Mill;
+
+    public string MachineModeDisplayName => IsLatheMode ? "Lathe" : "Mill";
+
     public double MachineX
     {
         get => _machineX;
         private set => SetProperty(ref _machineX, value);
     }
 
+    public double MachineY
+    {
+        get => _machineY;
+        private set => SetProperty(ref _machineY, value);
+    }
+
     public double MachineZ
     {
         get => _machineZ;
         private set => SetProperty(ref _machineZ, value);
+    }
+
+    public double MachineA
+    {
+        get => _machineA;
+        private set => SetProperty(ref _machineA, value);
+    }
+
+    public double MachineB
+    {
+        get => _machineB;
+        private set => SetProperty(ref _machineB, value);
     }
 
     public double WorkX
@@ -217,6 +308,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _workX, value))
             {
                 OnPropertyChanged(nameof(CurrentWorkOffsetText));
+                OnPropertyChanged(nameof(PreviewHorizontalPosition));
+            }
+        }
+    }
+
+    public double WorkY
+    {
+        get => _workY;
+        private set
+        {
+            if (SetProperty(ref _workY, value))
+            {
+                OnPropertyChanged(nameof(CurrentWorkOffsetText));
+                OnPropertyChanged(nameof(PreviewVerticalPosition));
             }
         }
     }
@@ -229,8 +334,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _workZ, value))
             {
                 OnPropertyChanged(nameof(CurrentWorkOffsetText));
+                OnPropertyChanged(nameof(PreviewHorizontalPosition));
             }
         }
+    }
+
+    public double WorkA
+    {
+        get => _workA;
+        private set => SetProperty(ref _workA, value);
+    }
+
+    public double WorkB
+    {
+        get => _workB;
+        private set => SetProperty(ref _workB, value);
     }
 
     public int ActiveToolNumber
@@ -261,7 +379,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string CurrentWorkOffsetText => $"Displayed work X {WorkX:0.###} mm | Z {WorkZ:0.###} mm";
+    public string CurrentWorkOffsetText => IsLatheMode
+        ? $"Displayed work X {WorkX:0.###} mm | Z {WorkZ:0.###} mm"
+        : $"Displayed work X {WorkX:0.###} mm | Y {WorkY:0.###} mm | Z {WorkZ:0.###} mm";
+
+    public double PreviewHorizontalPosition => IsLatheMode ? WorkZ : WorkX;
+
+    public double PreviewVerticalPosition => IsLatheMode ? WorkX : WorkY;
+
+    public string PreviewHorizontalAxisLabel => IsLatheMode ? "Z" : "X";
+
+    public string PreviewVerticalAxisLabel => IsLatheMode ? "X" : "Y";
 
     public bool IsKeyboardControlEnabled
     {
@@ -272,7 +400,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 OnPropertyChanged(nameof(KeyboardControlStatusText));
                 OnPropertyChanged(nameof(IsKeyboardXAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardYAxisActive));
                 OnPropertyChanged(nameof(IsKeyboardZAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardAAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardBAxisActive));
             }
         }
     }
@@ -283,7 +414,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public bool IsKeyboardXAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'X';
 
+    public bool IsKeyboardYAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'Y';
+
     public bool IsKeyboardZAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'Z';
+
+    public bool IsKeyboardAAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'A';
+
+    public bool IsKeyboardBAxisActive => IsKeyboardControlEnabled && KeyboardJogAxis == 'B';
 
     public string KeyboardStepText => $"Step {GetActiveKeyboardStep():0.###} mm";
 
@@ -299,6 +436,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _xLimitPinHigh;
         private set => SetProperty(ref _xLimitPinHigh, value);
+    }
+
+    public bool YLimitPinHigh
+    {
+        get => _yLimitPinHigh;
+        private set => SetProperty(ref _yLimitPinHigh, value);
     }
 
     public bool ZLimitPinHigh
@@ -359,6 +502,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _workXInput, value);
     }
 
+    public string WorkYInput
+    {
+        get => _workYInput;
+        set => SetProperty(ref _workYInput, value);
+    }
+
     public string WorkZInput
     {
         get => _workZInput;
@@ -375,6 +524,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _goToXInput;
         set => SetProperty(ref _goToXInput, value);
+    }
+
+    public string GoToYInput
+    {
+        get => _goToYInput;
+        set => SetProperty(ref _goToYInput, value);
     }
 
     public string GoToZInput
@@ -407,6 +562,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    public string YJogFeedInput
+    {
+        get => _yJogFeedInput;
+        set
+        {
+            if (SetProperty(ref _yJogFeedInput, value))
+            {
+                OnPropertyChanged(nameof(KeyboardFeedText));
+            }
+        }
+    }
+
     public string ZJogFeedInput
     {
         get => _zJogFeedInput;
@@ -417,6 +584,72 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(KeyboardFeedText));
             }
         }
+    }
+
+    public string AJogFeedInput
+    {
+        get => _aJogFeedInput;
+        set
+        {
+            if (SetProperty(ref _aJogFeedInput, value))
+            {
+                OnPropertyChanged(nameof(KeyboardFeedText));
+            }
+        }
+    }
+
+    public string BJogFeedInput
+    {
+        get => _bJogFeedInput;
+        set
+        {
+            if (SetProperty(ref _bJogFeedInput, value))
+            {
+                OnPropertyChanged(nameof(KeyboardFeedText));
+            }
+        }
+    }
+
+    public string ToolChangeXInput
+    {
+        get => _toolChangeXInput;
+        set => SetProperty(ref _toolChangeXInput, value);
+    }
+
+    public string ToolChangeYInput
+    {
+        get => _toolChangeYInput;
+        set => SetProperty(ref _toolChangeYInput, value);
+    }
+
+    public string ToolChangeSafeZInput
+    {
+        get => _toolChangeSafeZInput;
+        set => SetProperty(ref _toolChangeSafeZInput, value);
+    }
+
+    public string ProbeTravelInput
+    {
+        get => _probeTravelInput;
+        set => SetProperty(ref _probeTravelInput, value);
+    }
+
+    public string ProbeFeedInput
+    {
+        get => _probeFeedInput;
+        set => SetProperty(ref _probeFeedInput, value);
+    }
+
+    public string ProbeRetractInput
+    {
+        get => _probeRetractInput;
+        set => SetProperty(ref _probeRetractInput, value);
+    }
+
+    public string TouchPlateThicknessInput
+    {
+        get => _touchPlateThicknessInput;
+        set => SetProperty(ref _touchPlateThicknessInput, value);
     }
 
     public int SelectedSpindleSpeed
@@ -466,12 +699,48 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    public double SelectedYJogStep
+    {
+        get => _selectedYJogStep;
+        set
+        {
+            if (SetProperty(ref _selectedYJogStep, value))
+            {
+                OnPropertyChanged(nameof(KeyboardStepText));
+            }
+        }
+    }
+
     public double SelectedZJogStep
     {
         get => _selectedZJogStep;
         set
         {
             if (SetProperty(ref _selectedZJogStep, value))
+            {
+                OnPropertyChanged(nameof(KeyboardStepText));
+            }
+        }
+    }
+
+    public double SelectedAJogStep
+    {
+        get => _selectedAJogStep;
+        set
+        {
+            if (SetProperty(ref _selectedAJogStep, value))
+            {
+                OnPropertyChanged(nameof(KeyboardStepText));
+            }
+        }
+    }
+
+    public double SelectedBJogStep
+    {
+        get => _selectedBJogStep;
+        set
+        {
+            if (SetProperty(ref _selectedBJogStep, value))
             {
                 OnPropertyChanged(nameof(KeyboardStepText));
             }
@@ -487,7 +756,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 OnPropertyChanged(nameof(KeyboardAxisText));
                 OnPropertyChanged(nameof(IsKeyboardXAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardYAxisActive));
                 OnPropertyChanged(nameof(IsKeyboardZAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardAAxisActive));
+                OnPropertyChanged(nameof(IsKeyboardBAxisActive));
                 OnPropertyChanged(nameof(KeyboardStepText));
                 OnPropertyChanged(nameof(KeyboardFeedText));
             }
@@ -603,6 +875,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return IsConnected && !IsProgramRunning;
     }
 
+    private void CalibrateTouchPlateThickness()
+    {
+        if (!IsMillMode)
+        {
+            return;
+        }
+
+        if (!IsConnected)
+        {
+            ShowValidationError("Connect to the controller before calibrating the touch plate thickness.");
+            return;
+        }
+
+        if (WorkZ <= 0)
+        {
+            ShowValidationError("Set work Z zero with the reference tool, then touch the top of the plate before calibrating its thickness.");
+            return;
+        }
+
+        TouchPlateThicknessInput = WorkZ.ToString("0.###", CultureInfo.InvariantCulture);
+        AddLog($"Calibrated touch plate thickness from current work Z: {WorkZ:0.###} mm.");
+    }
+
     private bool CanStartProgram()
     {
         return IsConnected && _loadedProgram is not null && !IsProgramRunning;
@@ -640,6 +935,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             IsConnected = true;
             UpdateFeedOverrideFromController(100);
             XLimitPinHigh = false;
+            YLimitPinHigh = false;
             ZLimitPinHigh = false;
             ConnectionStatus = $"Connected to {SelectedPort}";
             AddLog($"Connected to {SelectedPort}.");
@@ -670,6 +966,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             IsProgramRunning = false;
             IsProgramPaused = false;
             XLimitPinHigh = false;
+            YLimitPinHigh = false;
             ZLimitPinHigh = false;
             UpdateFeedOverrideFromController(100);
             ConnectionStatus = "Disconnected";
@@ -685,6 +982,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         await SetWorkCoordinateAsync(xValue: xValue);
+    }
+
+    private async Task SetWorkYAsync()
+    {
+        if (!TryParseDouble(WorkYInput, "work Y", out var yValue))
+        {
+            return;
+        }
+
+        await SetWorkCoordinateAsync(yValue: yValue);
     }
 
     private async Task SetWorkZAsync()
@@ -751,6 +1058,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             successMessage: $"Moving Z to {targetZ:0.###} mm.");
     }
 
+    private async Task GoToYAsync()
+    {
+        if (!TryParseDouble(GoToYInput, "go-to Y", out var targetY))
+        {
+            return;
+        }
+
+        await MoveToWorkCoordinateAsync(
+            yValue: targetY,
+            feedRateInput: YJogFeedInput,
+            feedRateLabel: "Y go-to feed",
+            successMessage: $"Moving Y to {targetY:0.###} mm.");
+    }
+
     private async Task GoToRadiusPlusOneAsync()
     {
         if (!TryParseDouble(DiameterTouchOffInput, "touch-off diameter", out var diameter) || diameter < 0)
@@ -769,7 +1090,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task MoveToWorkCoordinateAsync(
         double? xValue = null,
+        double? yValue = null,
         double? zValue = null,
+        double? aValue = null,
+        double? bValue = null,
         string? feedRateInput = null,
         string feedRateLabel = "go-to feed",
         string successMessage = "Move command sent.")
@@ -782,7 +1106,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            await _grblClient.MoveToAsync(xValue, zValue, feedRate);
+            await _grblClient.MoveToAsync(xValue, yValue, zValue, aValue, bValue, feedRate);
             AddLog(successMessage);
         }
         catch (Exception exception)
@@ -791,12 +1115,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task SetWorkCoordinateAsync(double? xValue = null, double? zValue = null)
+    private async Task SetWorkCoordinateAsync(
+        double? xValue = null,
+        double? yValue = null,
+        double? zValue = null,
+        double? aValue = null,
+        double? bValue = null)
     {
         try
         {
-            await _grblClient.SetWorkCoordinateOffsetAsync(xValue, zValue);
-            AddLog(BuildOffsetLogMessage(xValue, zValue));
+            await _grblClient.SetWorkCoordinateOffsetAsync(xValue, yValue, zValue, aValue, bValue);
+            AddLog(BuildOffsetLogMessage(xValue, yValue, zValue, aValue, bValue));
         }
         catch (Exception exception)
         {
@@ -850,6 +1179,47 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private async Task RunToolProbeAsync()
+    {
+        if (!IsMillMode)
+        {
+            return;
+        }
+
+        if (!TryParseDouble(ToolChangeXInput, "tool change X", out var toolChangeX) ||
+            !TryParseDouble(ToolChangeYInput, "tool change Y", out var toolChangeY) ||
+            !TryParseDouble(ToolChangeSafeZInput, "safe Z", out var safeZ) ||
+            !TryParseDouble(ProbeTravelInput, "probe travel", out var probeTravel) ||
+            !TryParseDouble(ProbeFeedInput, "probe feed", out var probeFeed) ||
+            !TryParseDouble(ProbeRetractInput, "probe retract", out var probeRetract) ||
+            !TryParseDouble(TouchPlateThicknessInput, "touch plate thickness", out var touchPlateThickness))
+        {
+            return;
+        }
+
+        if (probeTravel <= 0 || probeFeed <= 0 || probeRetract <= 0 || touchPlateThickness < 0)
+        {
+            ShowValidationError("Enter positive probe travel/feed/retract values and a non-negative touch plate thickness.");
+            return;
+        }
+
+        try
+        {
+            AddLog("Starting mill tool probe cycle.");
+            await _grblClient.MoveToMachineAsync(z: safeZ);
+            await _grblClient.MoveToMachineAsync(x: toolChangeX, y: toolChangeY);
+            await _grblClient.ProbeAxisRelativeAsync("Z", -Math.Abs(probeTravel), probeFeed);
+            await _grblClient.SetWorkCoordinateOffsetAsync(z: touchPlateThickness);
+            WorkZInput = touchPlateThickness.ToString("0.###", CultureInfo.InvariantCulture);
+            await _grblClient.JogAsync("Z", Math.Abs(probeRetract), probeFeed);
+            AddLog($"Tool probe complete. Work Z set to touch plate thickness {touchPlateThickness:0.###} mm.");
+        }
+        catch (Exception exception)
+        {
+            ShowOperationError("Tool probe failed", exception);
+        }
+    }
+
     public bool TryHandleKeyboardInput(Key key, ModifierKeys modifiers, bool isRepeat)
     {
         if (!IsKeyboardControlEnabled || modifiers != ModifierKeys.None)
@@ -882,7 +1252,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             case Key.A:
                 if (!isRepeat)
                 {
-                    KeyboardJogAxis = KeyboardJogAxis == 'X' ? 'Z' : 'X';
+                    KeyboardJogAxis = GetNextKeyboardAxis();
                 }
 
                 return true;
@@ -1033,14 +1403,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            _loadedProgram = GCodeParser.ParseFile(openFileDialog.FileName);
+            _loadedProgram = GCodeParser.ParseFile(openFileDialog.FileName, MachineMode);
             ToolPathSegments = _loadedProgram.Segments;
             ProgramPath = _loadedProgram.FilePath;
             ExecutedProgramLines = 0;
             ProgramProgressPercent = 0;
             OnPropertyChanged(nameof(ProgramSummaryText));
             OnPropertyChanged(nameof(ProgramProgressText));
-            MergeToolOffsetsFromProgram(_loadedProgram);
+            if (IsLatheMode)
+            {
+                MergeToolOffsetsFromProgram(_loadedProgram);
+            }
             AddLog($"Loaded program: {_loadedProgram.DisplayName}");
             RefreshCommandStates();
         }
@@ -1238,6 +1611,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (!IsLatheMode)
+        {
+            return;
+        }
+
         var toolEntry = ToolOffsets.FirstOrDefault(entry => entry.ToolNumber == toolNumber);
         if (toolEntry is null)
         {
@@ -1342,7 +1720,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var command = KeyboardJogAxis switch
         {
             'X' => positiveDirection ? JogXPositiveCommand : JogXNegativeCommand,
-            _ => positiveDirection ? JogZPositiveCommand : JogZNegativeCommand
+            'Y' => positiveDirection ? JogYPositiveCommand : JogYNegativeCommand,
+            'Z' => positiveDirection ? JogZPositiveCommand : JogZNegativeCommand,
+            'A' => positiveDirection ? JogAPositiveCommand : JogANegativeCommand,
+            'B' => positiveDirection ? JogBPositiveCommand : JogBNegativeCommand,
+            _ => positiveDirection ? JogXPositiveCommand : JogXNegativeCommand
         };
 
         if (command.CanExecute(null))
@@ -1353,34 +1735,86 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void AdjustKeyboardStep(int direction)
     {
-        if (KeyboardJogAxis == 'X')
+        switch (KeyboardJogAxis)
         {
-            SelectedXJogStep = GetAdjacentStep(XJogSteps, SelectedXJogStep, direction);
-            return;
+            case 'X':
+                SelectedXJogStep = GetAdjacentStep(XJogSteps, SelectedXJogStep, direction);
+                break;
+            case 'Y':
+                SelectedYJogStep = GetAdjacentStep(LinearJogSteps, SelectedYJogStep, direction);
+                break;
+            case 'Z':
+                SelectedZJogStep = GetAdjacentStep(ZJogSteps, SelectedZJogStep, direction);
+                break;
+            case 'A':
+                SelectedAJogStep = GetAdjacentStep(RotaryJogSteps, SelectedAJogStep, direction);
+                break;
+            case 'B':
+                SelectedBJogStep = GetAdjacentStep(RotaryJogSteps, SelectedBJogStep, direction);
+                break;
         }
-
-        SelectedZJogStep = GetAdjacentStep(ZJogSteps, SelectedZJogStep, direction);
     }
 
     private void AdjustKeyboardFeed(double delta)
     {
-        if (KeyboardJogAxis == 'X')
+        switch (KeyboardJogAxis)
         {
-            XJogFeedInput = AdjustFeedInput(XJogFeedInput, delta);
-            return;
+            case 'X':
+                XJogFeedInput = AdjustFeedInput(XJogFeedInput, delta);
+                break;
+            case 'Y':
+                YJogFeedInput = AdjustFeedInput(YJogFeedInput, delta);
+                break;
+            case 'Z':
+                ZJogFeedInput = AdjustFeedInput(ZJogFeedInput, delta);
+                break;
+            case 'A':
+                AJogFeedInput = AdjustFeedInput(AJogFeedInput, delta);
+                break;
+            case 'B':
+                BJogFeedInput = AdjustFeedInput(BJogFeedInput, delta);
+                break;
         }
-
-        ZJogFeedInput = AdjustFeedInput(ZJogFeedInput, delta);
     }
 
     private double GetActiveKeyboardStep()
     {
-        return KeyboardJogAxis == 'X' ? SelectedXJogStep : SelectedZJogStep;
+        return KeyboardJogAxis switch
+        {
+            'X' => SelectedXJogStep,
+            'Y' => SelectedYJogStep,
+            'Z' => SelectedZJogStep,
+            'A' => SelectedAJogStep,
+            'B' => SelectedBJogStep,
+            _ => SelectedXJogStep
+        };
     }
 
     private string GetActiveKeyboardFeedText()
     {
-        return KeyboardJogAxis == 'X' ? XJogFeedInput : ZJogFeedInput;
+        return KeyboardJogAxis switch
+        {
+            'X' => XJogFeedInput,
+            'Y' => YJogFeedInput,
+            'Z' => ZJogFeedInput,
+            'A' => AJogFeedInput,
+            'B' => BJogFeedInput,
+            _ => XJogFeedInput
+        };
+    }
+
+    private char GetNextKeyboardAxis()
+    {
+        var supportedAxes = IsMillMode
+            ? new[] { 'X', 'Y', 'Z', 'A', 'B' }
+            : new[] { 'X', 'Z' };
+        var currentIndex = Array.IndexOf(supportedAxes, KeyboardJogAxis);
+        if (currentIndex < 0)
+        {
+            return supportedAxes[0];
+        }
+
+        return supportedAxes[(currentIndex + 1) % supportedAxes.Length];
     }
 
     private static double GetAdjacentStep(IReadOnlyList<double> steps, double currentStep, int direction)
@@ -1486,9 +1920,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 MachineX = status.MachineX.Value;
             }
 
+            if (status.MachineY.HasValue)
+            {
+                MachineY = status.MachineY.Value;
+            }
+
             if (status.MachineZ.HasValue)
             {
                 MachineZ = status.MachineZ.Value;
+            }
+
+            if (status.MachineA.HasValue)
+            {
+                MachineA = status.MachineA.Value;
+            }
+
+            if (status.MachineB.HasValue)
+            {
+                MachineB = status.MachineB.Value;
             }
 
             if (status.WorkX.HasValue)
@@ -1496,12 +1945,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 WorkX = status.WorkX.Value;
             }
 
+            if (status.WorkY.HasValue)
+            {
+                WorkY = status.WorkY.Value;
+            }
+
             if (status.WorkZ.HasValue)
             {
                 WorkZ = status.WorkZ.Value;
             }
 
+            if (status.WorkA.HasValue)
+            {
+                WorkA = status.WorkA.Value;
+            }
+
+            if (status.WorkB.HasValue)
+            {
+                WorkB = status.WorkB.Value;
+            }
+
             XLimitPinHigh = status.XLimitPinHigh;
+            YLimitPinHigh = status.YLimitPinHigh;
             ZLimitPinHigh = status.ZLimitPinHigh;
 
             if (status.FeedOverridePercent.HasValue)
@@ -1558,6 +2023,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         ZeroXCommand.RaiseCanExecuteChanged();
+        ZeroYCommand.RaiseCanExecuteChanged();
         ZeroZCommand.RaiseCanExecuteChanged();
         ZeroAllCommand.RaiseCanExecuteChanged();
         HomeCommand.RaiseCanExecuteChanged();
@@ -1565,15 +2031,25 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplySpindleSpeedCommand.RaiseCanExecuteChanged();
         StopSpindleCommand.RaiseCanExecuteChanged();
         SetWorkXCommand.RaiseCanExecuteChanged();
+        SetWorkYCommand.RaiseCanExecuteChanged();
         SetWorkZCommand.RaiseCanExecuteChanged();
         SetXFromDiameterCommand.RaiseCanExecuteChanged();
         GoToXCommand.RaiseCanExecuteChanged();
+        GoToYCommand.RaiseCanExecuteChanged();
         GoToZCommand.RaiseCanExecuteChanged();
         GoToRadiusPlusOneCommand.RaiseCanExecuteChanged();
         JogXPositiveCommand.RaiseCanExecuteChanged();
         JogXNegativeCommand.RaiseCanExecuteChanged();
+        JogYPositiveCommand.RaiseCanExecuteChanged();
+        JogYNegativeCommand.RaiseCanExecuteChanged();
         JogZPositiveCommand.RaiseCanExecuteChanged();
         JogZNegativeCommand.RaiseCanExecuteChanged();
+        JogAPositiveCommand.RaiseCanExecuteChanged();
+        JogANegativeCommand.RaiseCanExecuteChanged();
+        JogBPositiveCommand.RaiseCanExecuteChanged();
+        JogBNegativeCommand.RaiseCanExecuteChanged();
+        CalibrateTouchPlateThicknessCommand.RaiseCanExecuteChanged();
+        RunToolProbeCommand.RaiseCanExecuteChanged();
         LoadProgramCommand.RaiseCanExecuteChanged();
         StartProgramCommand.RaiseCanExecuteChanged();
         PauseResumeProgramCommand.RaiseCanExecuteChanged();
@@ -1640,15 +2116,37 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                controllerState.StartsWith("Door", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildOffsetLogMessage(double? xValue, double? zValue)
+    private static string BuildOffsetLogMessage(double? xValue, double? yValue, double? zValue, double? aValue, double? bValue)
     {
-        return (xValue, zValue) switch
+        var parts = new List<string>();
+        if (xValue.HasValue)
         {
-            ({ } x, { } z) => $"Updated work offset: X={x:0.###}, Z={z:0.###}",
-            ({ } x, null) => $"Updated work X offset: X={x:0.###}",
-            (null, { } z) => $"Updated work Z offset: Z={z:0.###}",
-            _ => "Updated work offset."
-        };
+            parts.Add($"X={xValue.Value:0.###}");
+        }
+
+        if (yValue.HasValue)
+        {
+            parts.Add($"Y={yValue.Value:0.###}");
+        }
+
+        if (zValue.HasValue)
+        {
+            parts.Add($"Z={zValue.Value:0.###}");
+        }
+
+        if (aValue.HasValue)
+        {
+            parts.Add($"A={aValue.Value:0.###}");
+        }
+
+        if (bValue.HasValue)
+        {
+            parts.Add($"B={bValue.Value:0.###}");
+        }
+
+        return parts.Count == 0
+            ? "Updated work offset."
+            : $"Updated work offset: {string.Join(", ", parts)}";
     }
 
     private bool TryParseDouble(string rawValue, string fieldName, out double parsedValue)

@@ -41,16 +41,28 @@ public sealed class ToolPathPreviewControl : FrameworkElement
             static (dependencyObject, _) => ((ToolPathPreviewControl)dependencyObject).ResetView()));
 
     public static readonly DependencyProperty CurrentXProperty = DependencyProperty.Register(
-        nameof(CurrentX),
+        nameof(CurrentHorizontal),
         typeof(double),
         typeof(ToolPathPreviewControl),
         new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public static readonly DependencyProperty CurrentZProperty = DependencyProperty.Register(
-        nameof(CurrentZ),
+        nameof(CurrentVertical),
         typeof(double),
         typeof(ToolPathPreviewControl),
         new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty HorizontalAxisLabelProperty = DependencyProperty.Register(
+        nameof(HorizontalAxisLabel),
+        typeof(string),
+        typeof(ToolPathPreviewControl),
+        new FrameworkPropertyMetadata("Z", FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public static readonly DependencyProperty VerticalAxisLabelProperty = DependencyProperty.Register(
+        nameof(VerticalAxisLabel),
+        typeof(string),
+        typeof(ToolPathPreviewControl),
+        new FrameworkPropertyMetadata("X", FrameworkPropertyMetadataOptions.AffectsRender));
 
     public IEnumerable<ToolPathSegment>? Segments
     {
@@ -58,16 +70,28 @@ public sealed class ToolPathPreviewControl : FrameworkElement
         set => SetValue(SegmentsProperty, value);
     }
 
-    public double CurrentX
+    public double CurrentHorizontal
     {
         get => (double)GetValue(CurrentXProperty);
         set => SetValue(CurrentXProperty, value);
     }
 
-    public double CurrentZ
+    public double CurrentVertical
     {
         get => (double)GetValue(CurrentZProperty);
         set => SetValue(CurrentZProperty, value);
+    }
+
+    public string HorizontalAxisLabel
+    {
+        get => (string)GetValue(HorizontalAxisLabelProperty);
+        set => SetValue(HorizontalAxisLabelProperty, value);
+    }
+
+    public string VerticalAxisLabel
+    {
+        get => (string)GetValue(VerticalAxisLabelProperty);
+        set => SetValue(VerticalAxisLabelProperty, value);
     }
 
     public ToolPathPreviewControl()
@@ -106,39 +130,39 @@ public sealed class ToolPathPreviewControl : FrameworkElement
             new Point(segment.EndZ, segment.EndX)
         }).ToList();
 
-        points.Add(new Point(CurrentZ, CurrentX));
+        points.Add(new Point(CurrentHorizontal, CurrentVertical));
 
-        var minZ = points.Min(point => point.X);
-        var maxZ = points.Max(point => point.X);
-        var minX = points.Min(point => point.Y);
-        var maxX = points.Max(point => point.Y);
+        var minHorizontal = points.Min(point => point.X);
+        var maxHorizontal = points.Max(point => point.X);
+        var minVertical = points.Min(point => point.Y);
+        var maxVertical = points.Max(point => point.Y);
 
-        ExpandFlatBounds(ref minZ, ref maxZ);
-        ExpandFlatBounds(ref minX, ref maxX);
+        ExpandFlatBounds(ref minHorizontal, ref maxHorizontal);
+        ExpandFlatBounds(ref minVertical, ref maxVertical);
 
-        var zRange = maxZ - minZ;
-        var xRange = maxX - minX;
-        var scale = Math.Min(plotBounds.Width / zRange, plotBounds.Height / xRange) * 0.92;
+        var horizontalRange = maxHorizontal - minHorizontal;
+        var verticalRange = maxVertical - minVertical;
+        var scale = Math.Min(plotBounds.Width / horizontalRange, plotBounds.Height / verticalRange) * 0.92;
         var plotCenter = new Point(plotBounds.Left + (plotBounds.Width / 2), plotBounds.Top + (plotBounds.Height / 2));
-        var centerZ = (minZ + maxZ) / 2;
-        var centerX = (minX + maxX) / 2;
+        var centerHorizontal = (minHorizontal + maxHorizontal) / 2;
+        var centerVertical = (minVertical + maxVertical) / 2;
 
-        Point Map(double z, double x) => new(
-            plotCenter.X + (((z - centerZ) * scale * _zoom) + _panOffset.X),
-            plotCenter.Y - (((x - centerX) * scale * _zoom) - _panOffset.Y));
+        Point Map(double horizontal, double vertical) => new(
+            plotCenter.X + (((horizontal - centerHorizontal) * scale * _zoom) + _panOffset.X),
+            plotCenter.Y - (((vertical - centerVertical) * scale * _zoom) - _panOffset.Y));
 
         DrawGrid(drawingContext, plotBounds);
         drawingContext.PushClip(new RectangleGeometry(plotBounds, 18, 18));
 
-        if (minZ <= 0 && maxZ >= 0)
+        if (minHorizontal <= 0 && maxHorizontal >= 0)
         {
-            var axisX = Map(0, centerX).X;
+            var axisX = Map(0, centerVertical).X;
             drawingContext.DrawLine(AxisPen, new Point(axisX, plotBounds.Top), new Point(axisX, plotBounds.Bottom));
         }
 
-        if (minX <= 0 && maxX >= 0)
+        if (minVertical <= 0 && maxVertical >= 0)
         {
-            var axisY = Map(centerZ, 0).Y;
+            var axisY = Map(centerHorizontal, 0).Y;
             drawingContext.DrawLine(AxisPen, new Point(plotBounds.Left, axisY), new Point(plotBounds.Right, axisY));
         }
 
@@ -150,7 +174,7 @@ public sealed class ToolPathPreviewControl : FrameworkElement
                 Map(segment.EndZ, segment.EndX));
         }
 
-        var toolPoint = Map(CurrentZ, CurrentX);
+        var toolPoint = Map(CurrentHorizontal, CurrentVertical);
         drawingContext.DrawEllipse(MarkerBrush, null, toolPoint, 4.5, 4.5);
         drawingContext.Pop();
 
@@ -248,7 +272,7 @@ public sealed class ToolPathPreviewControl : FrameworkElement
     {
         DrawGrid(drawingContext, plotBounds);
 
-        var message = CreateText("Load a G-code file to preview the X/Z toolpath.", 16);
+        var message = CreateText($"Load a G-code file to preview the {HorizontalAxisLabel}/{VerticalAxisLabel} toolpath.", 16);
         var subMessage = CreateText("Rapid moves are blue. Cutting moves are orange.", 13);
 
         var messageOrigin = new Point(
@@ -278,8 +302,8 @@ public sealed class ToolPathPreviewControl : FrameworkElement
 
     private void DrawAxisLabels(DrawingContext drawingContext, Rect plotBounds)
     {
-        drawingContext.DrawText(CreateText("Z", 13), new Point(plotBounds.Right - 16, plotBounds.Bottom + 4));
-        drawingContext.DrawText(CreateText("X", 13), new Point(plotBounds.Left - 16, plotBounds.Top - 4));
+        drawingContext.DrawText(CreateText(HorizontalAxisLabel, 13), new Point(plotBounds.Right - 16, plotBounds.Bottom + 4));
+        drawingContext.DrawText(CreateText(VerticalAxisLabel, 13), new Point(plotBounds.Left - 16, plotBounds.Top - 4));
     }
 
     private void DrawInteractionHint(DrawingContext drawingContext, Rect plotBounds)

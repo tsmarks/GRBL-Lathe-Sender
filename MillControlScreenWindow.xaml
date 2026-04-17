@@ -1,0 +1,447 @@
+<Window x:Class="GRBL_Lathe_Control.MillControlScreenWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="GRBL Mill Sender - Control Screen"
+        Width="1440"
+        Height="960"
+        MinWidth="1240"
+        MinHeight="860"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        WindowStartupLocation="CenterScreen">
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#08111F" Offset="0"/>
+            <GradientStop Color="#111E31" Offset="0.55"/>
+            <GradientStop Color="#172942" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Background>
+
+    <Window.Resources>
+        <Style x:Key="TouchPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="MinHeight" Value="52"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="Padding" Value="18,10"/>
+        </Style>
+
+        <Style x:Key="TouchSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="52"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="Padding" Value="18,10"/>
+        </Style>
+
+        <Style x:Key="TouchComboStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinHeight" Value="48"/>
+        </Style>
+
+        <Style x:Key="TouchTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource InputTextBoxStyle}">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinHeight" Value="48"/>
+        </Style>
+
+        <Style x:Key="CompactTouchPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="MinWidth" Value="76"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="14,8"/>
+        </Style>
+
+        <Style x:Key="CompactTouchSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="MinWidth" Value="76"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="14,8"/>
+        </Style>
+
+        <Style x:Key="CompactTouchTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource InputTextBoxStyle}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="MinHeight" Value="42"/>
+        </Style>
+
+        <Style x:Key="LargeDroValueStyle" TargetType="TextBlock" BasedOn="{StaticResource AxisValueStyle}">
+            <Setter Property="FontSize" Value="48"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}" Margin="0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Mill Control Screen" Style="{StaticResource SectionTitleStyle}" FontSize="28"/>
+                    <TextBlock Text="Touch-first DRO, 5-axis jog controls, work offsets, spindle control, and program controls."
+                               Style="{StaticResource LabelTextStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Margin="0,0,20,0">
+                        <TextBlock Text="Connection" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBlock Text="{Binding ConnectionStatus}" Style="{StaticResource BodyTextStyle}" FontSize="15" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,20,0">
+                        <TextBlock Text="Controller State" Style="{StaticResource LabelTextStyle}"/>
+                        <TextBlock Text="{Binding ControllerState}" Style="{StaticResource BodyTextStyle}" FontSize="15" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,20,0">
+                        <CheckBox Content="Keyboard Control"
+                                  Style="{StaticResource InlineCheckBoxStyle}"
+                                  Margin="0,0,0,6"
+                                  IsChecked="{Binding IsKeyboardControlEnabled}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardXAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="X" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardYAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Y" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardZAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Z" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardAAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="A" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardBAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="B" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <Button Content="Home"
+                            Style="{StaticResource TouchSecondaryButtonStyle}"
+                            Margin="0,0,12,0"
+                            Command="{Binding HomeCommand}"/>
+                    <Button Content="Reset"
+                            Style="{StaticResource TouchSecondaryButtonStyle}"
+                            Margin="0,0,12,0"
+                            Command="{Binding SoftResetCommand}"/>
+                    <Button Content="Single Screen"
+                            Style="{StaticResource TouchSecondaryButtonStyle}"
+                            Margin="0"
+                            Click="ReturnToSingleScreen_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+            <UniformGrid Columns="5">
+                <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="X" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding XLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="X LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                        </Border>
+                        <TextBlock Text="{Binding WorkX, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Y" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding YLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Y LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                        </Border>
+                        <TextBlock Text="{Binding WorkY, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Z" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                        </Border>
+                        <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="A" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                        <TextBlock Text="{Binding WorkA, StringFormat=\{0:F3\} deg}" Style="{StaticResource LargeDroValueStyle}" Margin="0,20,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0">
+                    <StackPanel>
+                        <TextBlock Text="B" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                        <TextBlock Text="{Binding WorkB, StringFormat=\{0:F3\} deg}" Style="{StaticResource LargeDroValueStyle}" Margin="0,20,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+        </Border>
+
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2.2*"/>
+                <ColumnDefinition Width="18"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0">
+                <StackPanel>
+                    <TextBlock Text="Manual Jog" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                    <TextBlock Text="Touch-friendly 5-axis jog controls."
+                               Style="{StaticResource LabelTextStyle}"
+                               Margin="0,6,0,14"/>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="X" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedXJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding XJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <UniformGrid Grid.Column="6" Rows="1" Columns="2" Margin="0,0,0,0">
+                            <Button Content="-X" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogXNegativeCommand}"/>
+                            <Button Content="+X" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogXPositiveCommand}"/>
+                        </UniformGrid>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Y" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedYJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding YJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <UniformGrid Grid.Column="6" Rows="1" Columns="2">
+                            <Button Content="-Y" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogYNegativeCommand}"/>
+                            <Button Content="+Y" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogYPositiveCommand}"/>
+                        </UniformGrid>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Z" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedZJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding ZJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <UniformGrid Grid.Column="6" Rows="1" Columns="2">
+                            <Button Content="-Z" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogZNegativeCommand}"/>
+                            <Button Content="+Z" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogZPositiveCommand}"/>
+                        </UniformGrid>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="A" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedAJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding AJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <UniformGrid Grid.Column="6" Rows="1" Columns="2">
+                            <Button Content="-A" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogANegativeCommand}"/>
+                            <Button Content="+A" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogAPositiveCommand}"/>
+                        </UniformGrid>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="B" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedBJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding BJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <UniformGrid Grid.Column="6" Rows="1" Columns="2">
+                            <Button Content="-B" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogBNegativeCommand}"/>
+                            <Button Content="+B" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogBPositiveCommand}"/>
+                        </UniformGrid>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Work Offsets" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                    <TextBlock Grid.Row="1"
+                               Text="Touch-friendly X/Y/Z work offset updates sized to stay visible on a 1080p control screen."
+                               Style="{StaticResource LabelTextStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0"/>
+
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Work X" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource CompactTouchTextBoxStyle}"
+                                 Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set X"
+                                Style="{StaticResource CompactTouchPrimaryButtonStyle}"
+                                Command="{Binding SetWorkXCommand}"/>
+                        <Button Grid.Column="6"
+                                Content="Zero X"
+                                Style="{StaticResource CompactTouchSecondaryButtonStyle}"
+                                Command="{Binding ZeroXCommand}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Work Y" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource CompactTouchTextBoxStyle}"
+                                 Text="{Binding WorkYInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set Y"
+                                Style="{StaticResource CompactTouchPrimaryButtonStyle}"
+                                Command="{Binding SetWorkYCommand}"/>
+                        <Button Grid.Column="6"
+                                Content="Zero Y"
+                                Style="{StaticResource CompactTouchSecondaryButtonStyle}"
+                                Command="{Binding ZeroYCommand}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Work Z" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource CompactTouchTextBoxStyle}"
+                                 Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set Z"
+                                Style="{StaticResource CompactTouchPrimaryButtonStyle}"
+                                Command="{Binding SetWorkZCommand}"/>
+                        <Button Grid.Column="6"
+                                Content="Zero Z"
+                                Style="{StaticResource CompactTouchSecondaryButtonStyle}"
+                                Command="{Binding ZeroZCommand}"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="18"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0">
+                <StackPanel>
+                    <TextBlock Text="Spindle Control" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
+                    <DockPanel Margin="0,14,0,8">
+                        <TextBlock Text="Speed (S)" Style="{StaticResource LabelTextStyle}" Margin="0"/>
+                        <TextBlock Text="{Binding SelectedSpindleSpeedText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="18" FontWeight="SemiBold"/>
+                    </DockPanel>
+                    <Slider Minimum="0"
+                            Maximum="1000"
+                            TickFrequency="25"
+                            SmallChange="1"
+                            LargeChange="25"
+                            IsEnabled="{Binding CanManualSpindleControl}"
+                            Value="{Binding SelectedSpindleSpeed}"
+                            Margin="0,0,0,16"/>
+                    <UniformGrid Rows="1" Columns="2">
+                        <Button Content="Start / Update" Style="{StaticResource TouchPrimaryButtonStyle}" Height="70" Command="{Binding ApplySpindleSpeedCommand}"/>
+                        <Button Content="Stop Spindle" Style="{StaticResource TouchSecondaryButtonStyle}" Height="70" Margin="12,0,0,0" Command="{Binding StopSpindleCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+                <StackPanel>
+                    <TextBlock Text="Program / Feed" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
+                    <TextBlock Text="{Binding ProgramSummaryText}" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,12" TextWrapping="Wrap"/>
+                    <UniformGrid Rows="1" Columns="3" Margin="0,0,0,18">
+                        <Button Content="Run" Style="{StaticResource TouchPrimaryButtonStyle}" Height="70" Command="{Binding StartProgramCommand}"/>
+                        <Button Content="{Binding PauseResumeLabel}" Style="{StaticResource TouchSecondaryButtonStyle}" Height="70" Margin="12,0,0,0" Command="{Binding PauseResumeProgramCommand}"/>
+                        <Button Content="Stop" Style="{StaticResource TouchSecondaryButtonStyle}" Height="70" Margin="12,0,0,0" Command="{Binding StopProgramCommand}"/>
+                    </UniformGrid>
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock Text="Feed Override" Style="{StaticResource LabelTextStyle}" Margin="0"/>
+                        <TextBlock Text="{Binding FeedOverrideText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="18" FontWeight="SemiBold"/>
+                    </DockPanel>
+                    <Slider Minimum="25"
+                            Maximum="200"
+                            TickFrequency="5"
+                            SmallChange="1"
+                            LargeChange="10"
+                            IsEnabled="{Binding IsConnected}"
+                            Value="{Binding FeedOverridePercent}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

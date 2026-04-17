@@ -49,8 +49,10 @@
 
                     <controls:ToolPathPreviewControl Grid.Row="2"
                                                      Segments="{Binding ToolPathSegments}"
-                                                     CurrentX="{Binding WorkX}"
-                                                     CurrentZ="{Binding WorkZ}"/>
+                                                     CurrentHorizontal="{Binding PreviewHorizontalPosition}"
+                                                     CurrentVertical="{Binding PreviewVerticalPosition}"
+                                                     HorizontalAxisLabel="{Binding PreviewHorizontalAxisLabel}"
+                                                     VerticalAxisLabel="{Binding PreviewVerticalAxisLabel}"/>
                 </Grid>
             </Border>
         </TabItem>

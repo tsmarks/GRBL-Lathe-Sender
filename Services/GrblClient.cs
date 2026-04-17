@@ -141,11 +141,14 @@ public sealed class GrblClient : IDisposable
 
     public Task MoveToAsync(
         double? x = null,
+        double? y = null,
         double? z = null,
+        double? a = null,
+        double? b = null,
         double? feedRateMillimetersPerMinute = null,
         CancellationToken cancellationToken = default)
     {
-        if (!x.HasValue && !z.HasValue)
+        if (!x.HasValue && !y.HasValue && !z.HasValue && !a.HasValue && !b.HasValue)
         {
             throw new ArgumentException("At least one axis target is required.");
         }
@@ -162,16 +165,37 @@ public sealed class GrblClient : IDisposable
             builder.Append(CultureInfo.InvariantCulture, $" X{x.Value:0.###}");
         }
 
+        if (y.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" Y{y.Value:0.###}");
+        }
+
         if (z.HasValue)
         {
             builder.Append(CultureInfo.InvariantCulture, $" Z{z.Value:0.###}");
+        }
+
+        if (a.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" A{a.Value:0.###}");
+        }
+
+        if (b.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" B{b.Value:0.###}");
         }
 
         builder.Append(CultureInfo.InvariantCulture, $" F{feedRateMillimetersPerMinute.Value:0.###}");
         return SendCommandAsync(builder.ToString(), cancellationToken);
     }
 
-    public Task SetWorkCoordinateOffsetAsync(double? x = null, double? z = null, CancellationToken cancellationToken = default)
+    public Task SetWorkCoordinateOffsetAsync(
+        double? x = null,
+        double? y = null,
+        double? z = null,
+        double? a = null,
+        double? b = null,
+        CancellationToken cancellationToken = default)
     {
         var builder = new StringBuilder("G10 L20 P1");
 
@@ -180,12 +204,119 @@ public sealed class GrblClient : IDisposable
             builder.Append(CultureInfo.InvariantCulture, $" X{x.Value:0.###}");
         }
 
+        if (y.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" Y{y.Value:0.###}");
+        }
+
         if (z.HasValue)
         {
             builder.Append(CultureInfo.InvariantCulture, $" Z{z.Value:0.###}");
         }
 
+        if (a.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" A{a.Value:0.###}");
+        }
+
+        if (b.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" B{b.Value:0.###}");
+        }
+
         return SendCommandAsync(builder.ToString(), cancellationToken);
+    }
+
+    public Task MoveToMachineAsync(
+        double? x = null,
+        double? y = null,
+        double? z = null,
+        double? a = null,
+        double? b = null,
+        bool rapidMove = true,
+        double? feedRateMillimetersPerMinute = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!x.HasValue && !y.HasValue && !z.HasValue && !a.HasValue && !b.HasValue)
+        {
+            throw new ArgumentException("At least one machine axis target is required.");
+        }
+
+        var builder = new StringBuilder(rapidMove ? "G53 G0" : "G53 G1");
+
+        if (x.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" X{x.Value:0.###}");
+        }
+
+        if (y.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" Y{y.Value:0.###}");
+        }
+
+        if (z.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" Z{z.Value:0.###}");
+        }
+
+        if (a.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" A{a.Value:0.###}");
+        }
+
+        if (b.HasValue)
+        {
+            builder.Append(CultureInfo.InvariantCulture, $" B{b.Value:0.###}");
+        }
+
+        if (!rapidMove)
+        {
+            if (!feedRateMillimetersPerMinute.HasValue || feedRateMillimetersPerMinute.Value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(feedRateMillimetersPerMinute), "A positive feed rate is required for machine feed moves.");
+            }
+
+            builder.Append(CultureInfo.InvariantCulture, $" F{feedRateMillimetersPerMinute.Value:0.###}");
+        }
+
+        return SendCommandAsync(builder.ToString(), cancellationToken);
+    }
+
+    public async Task ProbeAxisRelativeAsync(
+        string axisLetter,
+        double distanceMillimeters,
+        double feedRateMillimetersPerMinute,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(axisLetter))
+        {
+            throw new ArgumentException("An axis letter is required.", nameof(axisLetter));
+        }
+
+        if (feedRateMillimetersPerMinute <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(feedRateMillimetersPerMinute), "A positive probe feed is required.");
+        }
+
+        var normalizedAxis = axisLetter.Trim().ToUpperInvariant();
+        try
+        {
+            await SendCommandAsync(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"G91 G38.2 {normalizedAxis}{distanceMillimeters:0.###} F{feedRateMillimetersPerMinute:0.###}"),
+                cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                await SendCommandAsync("G90", cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+        }
     }
 
     public Task FeedHoldAsync()

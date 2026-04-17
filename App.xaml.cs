@@ -1,31 +1,54 @@
+using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
+using GRBL_Lathe_Control.Models;
 using GRBL_Lathe_Control.ViewModels;
 
 namespace GRBL_Lathe_Control;
 
 public partial class App : Application
 {
-    private MainWindow? _singleScreenWindow;
-    private ControlScreenWindow? _controlScreenWindow;
-    private DataScreenWindow? _dataScreenWindow;
+    private Window? _singleScreenWindow;
+    private Window? _controlScreenWindow;
+    private Window? _dataScreenWindow;
     private bool _isSwitchingScreenMode;
 
     public MainViewModel SharedViewModel { get; private set; } = null!;
+
+    public MachineMode CurrentMode { get; private set; }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        SharedViewModel = new MainViewModel();
-        _singleScreenWindow = new MainWindow(SharedViewModel);
+        var originalShutdownMode = ShutdownMode;
+
+        if (!TryResolveMode(e.Args, out var machineMode))
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            var selector = new StartupSelectionWindow();
+            if (selector.ShowDialog() != true || selector.SelectedMode is null)
+            {
+                Shutdown();
+                return;
+            }
+
+            machineMode = selector.SelectedMode.Value;
+        }
+
+        ShutdownMode = originalShutdownMode;
+        CurrentMode = machineMode;
+        SharedViewModel = new MainViewModel(machineMode);
+        _singleScreenWindow = CreateSingleScreenWindow();
         MainWindow = _singleScreenWindow;
         _singleScreenWindow.Show();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        SharedViewModel.Dispose();
+        SharedViewModel?.Dispose();
         base.OnExit(e);
     }
 
@@ -39,8 +62,9 @@ public partial class App : Application
         _isSwitchingScreenMode = true;
         try
         {
-            _controlScreenWindow = new ControlScreenWindow(SharedViewModel);
-            _dataScreenWindow = new DataScreenWindow(SharedViewModel);
+            var (controlWindow, dataWindow) = CreateDualWindows();
+            _controlScreenWindow = controlWindow;
+            _dataScreenWindow = dataWindow;
 
             _controlScreenWindow.Closing += OnDualScreenWindowClosing;
             _dataScreenWindow.Closing += OnDualScreenWindowClosing;
@@ -71,7 +95,7 @@ public partial class App : Application
         _isSwitchingScreenMode = true;
         try
         {
-            var replacementWindow = new MainWindow(SharedViewModel);
+            var replacementWindow = CreateSingleScreenWindow();
             _singleScreenWindow = replacementWindow;
             MainWindow = replacementWindow;
             replacementWindow.Show();
@@ -99,7 +123,7 @@ public partial class App : Application
         _isSwitchingScreenMode = true;
 
         var closingControlWindow = ReferenceEquals(sender, _controlScreenWindow);
-        Window? peerWindow = closingControlWindow ? _dataScreenWindow : _controlScreenWindow;
+        var peerWindow = closingControlWindow ? _dataScreenWindow : _controlScreenWindow;
 
         if (closingControlWindow)
         {
@@ -123,6 +147,39 @@ public partial class App : Application
                 _isSwitchingScreenMode = false;
             }
         }));
+    }
+
+    private Window CreateSingleScreenWindow()
+    {
+        return CurrentMode == MachineMode.Lathe
+            ? new MainWindow(SharedViewModel)
+            : new MillMainWindow(SharedViewModel);
+    }
+
+    private (Window controlWindow, Window dataWindow) CreateDualWindows()
+    {
+        return CurrentMode == MachineMode.Lathe
+            ? (new ControlScreenWindow(SharedViewModel), new DataScreenWindow(SharedViewModel))
+            : (new MillControlScreenWindow(SharedViewModel), new MillDataScreenWindow(SharedViewModel));
+    }
+
+    private static bool TryResolveMode(string[] args, out MachineMode machineMode)
+    {
+        var rawMode = args.FirstOrDefault();
+        if (string.Equals(rawMode, "lathe", StringComparison.OrdinalIgnoreCase))
+        {
+            machineMode = MachineMode.Lathe;
+            return true;
+        }
+
+        if (string.Equals(rawMode, "mill", StringComparison.OrdinalIgnoreCase))
+        {
+            machineMode = MachineMode.Mill;
+            return true;
+        }
+
+        machineMode = MachineMode.Lathe;
+        return false;
     }
 
     private static void PositionDualWindows(Window controlWindow, Window dataWindow)

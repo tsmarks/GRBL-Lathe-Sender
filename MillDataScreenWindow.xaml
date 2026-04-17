@@ -1,11 +1,11 @@
-<Window x:Class="GRBL_Lathe_Control.DataScreenWindow"
+<Window x:Class="GRBL_Lathe_Control.MillDataScreenWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:GRBL_Lathe_Control.Controls"
         mc:Ignorable="d"
-        Title="GRBL Lathe Sender - Data Screen"
+        Title="GRBL Mill Sender - Data Screen"
         Width="1440"
         Height="960"
         MinWidth="1200"
@@ -35,59 +35,29 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="Data Screen" Style="{StaticResource SectionTitleStyle}" FontSize="28"/>
-                    <TextBlock Text="Preview, tool offsets, work offsets, connection details, and logs."
+                    <TextBlock Text="Mill Data Screen" Style="{StaticResource SectionTitleStyle}" FontSize="28"/>
+                    <TextBlock Text="Preview, tool probe, work offsets, connection details, and controller logs."
                                Style="{StaticResource LabelTextStyle}"
                                Margin="0,6,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="{Binding ActiveToolText}"
-                                   Style="{StaticResource BodyTextStyle}"
-                                   FontFamily="Consolas"
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,4"/>
-                        <TextBlock Text="Active Tool Tip Offset" Style="{StaticResource LabelTextStyle}"/>
-                        <TextBlock Text="{Binding MasterRelativeOffsetText}"
-                                   Style="{StaticResource BodyTextStyle}"
-                                   FontFamily="Consolas"
-                                   FontSize="14"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding CurrentWorkOffsetText}"
-                                   Style="{StaticResource LabelTextStyle}"
-                                   FontFamily="Consolas"
-                                   Margin="0,6,0,0"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <CheckBox Content="Keyboard Control"
-                                      Style="{StaticResource InlineCheckBoxStyle}"
-                                      Margin="0,0,14,0"
-                                      IsChecked="{Binding IsKeyboardControlEnabled}"/>
+                        <CheckBox Content="Keyboard Control"
+                                  Style="{StaticResource InlineCheckBoxStyle}"
+                                  Margin="0,0,0,6"
+                                  IsChecked="{Binding IsKeyboardControlEnabled}"/>
+                        <StackPanel Orientation="Horizontal">
                             <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardXAxisActive}" VerticalAlignment="Center"/>
-                            <TextBlock Text="X"
-                                       Style="{StaticResource BodyTextStyle}"
-                                       FontFamily="Consolas"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,12,0"
-                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="X" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardYAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Y" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
                             <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardZAxisActive}" VerticalAlignment="Center"/>
-                            <TextBlock Text="Z"
-                                       Style="{StaticResource BodyTextStyle}"
-                                       FontFamily="Consolas"
-                                       FontWeight="SemiBold"
-                                       Margin="0,0,12,0"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding KeyboardStepText}"
-                                       Style="{StaticResource LabelTextStyle}"
-                                       FontFamily="Consolas"
-                                       Margin="0,0,12,0"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding KeyboardFeedText}"
-                                       Style="{StaticResource LabelTextStyle}"
-                                       FontFamily="Consolas"
-                                       Margin="0"
-                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Z" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardAAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="A" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <Ellipse Style="{StaticResource LedIndicatorStyle}" Tag="{Binding IsKeyboardBAxisActive}" VerticalAlignment="Center"/>
+                            <TextBlock Text="B" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontWeight="SemiBold"/>
                         </StackPanel>
                     </StackPanel>
                     <Button Content="Single Screen"
@@ -106,7 +76,7 @@
                 <ColumnDefinition Width="0.9*"/>
             </Grid.ColumnDefinitions>
 
-            <controls:ToolDataPane Grid.Column="0"/>
+            <controls:MillDataPane Grid.Column="0"/>
 
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
@@ -195,20 +165,11 @@
                                     <ColumnDefinition Width="12"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Work X" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}" Margin="0" Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
-
-                                <Button Grid.Column="2"
-                                        Content="Set X"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Margin="0"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding SetWorkXCommand}"/>
+                                <Button Grid.Column="2" Content="Set X" Style="{StaticResource PrimaryButtonStyle}" Margin="0" VerticalAlignment="Bottom" Command="{Binding SetWorkXCommand}"/>
                             </Grid>
 
                             <Grid Margin="0,0,0,12">
@@ -217,49 +178,25 @@
                                     <ColumnDefinition Width="12"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Work Z" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="Work Y" Style="{StaticResource LabelTextStyle}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}" Margin="0" Text="{Binding WorkYInput, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
-
-                                <Button Grid.Column="2"
-                                        Content="Set Z"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Margin="0"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding SetWorkZCommand}"/>
+                                <Button Grid.Column="2" Content="Set Y" Style="{StaticResource PrimaryButtonStyle}" Margin="0" VerticalAlignment="Bottom" Command="{Binding SetWorkYCommand}"/>
                             </Grid>
 
-                            <Grid Margin="0,0,0,14">
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="12"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Touch Diameter" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding DiameterTouchOffInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="Work Z" Style="{StaticResource LabelTextStyle}"/>
+                                    <TextBox Style="{StaticResource InputTextBoxStyle}" Margin="0" Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
-
-                                <Button Grid.Column="2"
-                                        Content="Set X From Dia"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Margin="0"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding SetXFromDiameterCommand}"/>
+                                <Button Grid.Column="2" Content="Set Z" Style="{StaticResource PrimaryButtonStyle}" Margin="0" VerticalAlignment="Bottom" Command="{Binding SetWorkZCommand}"/>
                             </Grid>
-
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Zero X" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ZeroXCommand}"/>
-                                <Button Content="Zero Z" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ZeroZCommand}"/>
-                                <Button Content="Zero All" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding ZeroAllCommand}"/>
-                            </StackPanel>
                         </StackPanel>
                     </Border>
 
@@ -267,7 +204,7 @@
                         <StackPanel>
                             <TextBlock Text="Controller Log" Style="{StaticResource SectionTitleStyle}"/>
                             <ListBox ItemsSource="{Binding ControllerLog}"
-                                     Height="280"
+                                     Height="260"
                                      Margin="0,14,0,0"
                                      Background="#0C1728"
                                      BorderBrush="{StaticResource InputBorderBrush}"

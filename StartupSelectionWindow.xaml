@@ -1,0 +1,58 @@
+<Window x:Class="GRBL_Lathe_Control.StartupSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Choose Machine Mode"
+        Width="760"
+        Height="420"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="SingleBorderWindow"
+        Background="#0B1422">
+    <Grid Margin="28">
+        <Border Style="{StaticResource CardBorderStyle}" Margin="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="24"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="GRBL Sender" Style="{StaticResource SectionTitleStyle}" FontSize="28"/>
+                    <TextBlock Text="Choose which machine experience to launch. You can also bypass this screen by starting the exe with a `lathe` or `mill` argument."
+                               Style="{StaticResource LabelTextStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="18"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Content="Lathe Mode"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            FontSize="24"
+                            Padding="20"
+                            Click="LatheButton_Click"/>
+
+                    <Button Grid.Column="2"
+                            Content="Mill Mode"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="24"
+                            Padding="20"
+                            Click="MillButton_Click"/>
+                </Grid>
+
+                <TextBlock Grid.Row="3"
+                           Text="Suggested shortcuts: `GRBL Lathe Sender.exe lathe` and `GRBL Lathe Sender.exe mill`."
+                           Style="{StaticResource LabelTextStyle}"
+                           Margin="0,18,0,0"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

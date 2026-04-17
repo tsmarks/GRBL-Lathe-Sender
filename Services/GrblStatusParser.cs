@@ -31,6 +31,7 @@ public static class GrblStatusParser
         double[]? workCoordinates = null;
         double[]? workOffsets = null;
         var xLimitPinHigh = false;
+        var yLimitPinHigh = false;
         var zLimitPinHigh = false;
         int? feedOverridePercent = null;
         int? rapidOverridePercent = null;
@@ -56,6 +57,7 @@ public static class GrblStatusParser
             {
                 var pinState = field[3..];
                 xLimitPinHigh = pinState.Contains('X', StringComparison.OrdinalIgnoreCase);
+                yLimitPinHigh = pinState.Contains('Y', StringComparison.OrdinalIgnoreCase);
                 zLimitPinHigh = pinState.Contains('Z', StringComparison.OrdinalIgnoreCase);
             }
             else if (field.StartsWith("Ov:", StringComparison.OrdinalIgnoreCase))
@@ -82,23 +84,47 @@ public static class GrblStatusParser
             ? ResolveAxis(machineCoordinates, 0)
             : Add(ResolveAxis(workCoordinates, 0), ResolveAxis(workOffsets, 0));
 
+        var machineY = machineCoordinates is not null
+            ? ResolveAxis(machineCoordinates, 1)
+            : Add(ResolveAxis(workCoordinates, 1), ResolveAxis(workOffsets, 1));
+
         var machineZ = machineCoordinates is not null
-            ? ResolveAxis(machineCoordinates, GetZAxisIndex(machineCoordinates))
+            ? ResolveAxis(machineCoordinates, ResolveZAxisIndex(machineCoordinates))
             : Add(
-                ResolveAxis(workCoordinates, GetZAxisIndex(workCoordinates)),
-                ResolveAxis(workOffsets, GetZAxisIndex(workOffsets)));
+                ResolveAxis(workCoordinates, ResolveZAxisIndex(workCoordinates)),
+                ResolveAxis(workOffsets, ResolveZAxisIndex(workOffsets)));
+
+        var machineA = machineCoordinates is not null
+            ? ResolveAxis(machineCoordinates, 3)
+            : Add(ResolveAxis(workCoordinates, 3), ResolveAxis(workOffsets, 3));
+
+        var machineB = machineCoordinates is not null
+            ? ResolveAxis(machineCoordinates, 4)
+            : Add(ResolveAxis(workCoordinates, 4), ResolveAxis(workOffsets, 4));
 
         var workX = workCoordinates is not null
             ? ResolveAxis(workCoordinates, 0)
             : Subtract(ResolveAxis(machineCoordinates, 0), ResolveAxis(workOffsets, 0));
 
-        var workZ = workCoordinates is not null
-            ? ResolveAxis(workCoordinates, GetZAxisIndex(workCoordinates))
-            : Subtract(
-                ResolveAxis(machineCoordinates, GetZAxisIndex(machineCoordinates)),
-                ResolveAxis(workOffsets, GetZAxisIndex(workOffsets)));
+        var workY = workCoordinates is not null
+            ? ResolveAxis(workCoordinates, 1)
+            : Subtract(ResolveAxis(machineCoordinates, 1), ResolveAxis(workOffsets, 1));
 
-        if (machineX is null && machineZ is null && workX is null && workZ is null)
+        var workZ = workCoordinates is not null
+            ? ResolveAxis(workCoordinates, ResolveZAxisIndex(workCoordinates))
+            : Subtract(
+                ResolveAxis(machineCoordinates, ResolveZAxisIndex(machineCoordinates)),
+                ResolveAxis(workOffsets, ResolveZAxisIndex(workOffsets)));
+
+        var workA = workCoordinates is not null
+            ? ResolveAxis(workCoordinates, 3)
+            : Subtract(ResolveAxis(machineCoordinates, 3), ResolveAxis(workOffsets, 3));
+
+        var workB = workCoordinates is not null
+            ? ResolveAxis(workCoordinates, 4)
+            : Subtract(ResolveAxis(machineCoordinates, 4), ResolveAxis(workOffsets, 4));
+
+        if (machineX is null && machineY is null && machineZ is null && workX is null && workY is null && workZ is null)
         {
             return false;
         }
@@ -107,10 +133,17 @@ public static class GrblStatusParser
         {
             State = fields[0],
             MachineX = machineX,
+            MachineY = machineY,
             MachineZ = machineZ,
+            MachineA = machineA,
+            MachineB = machineB,
             WorkX = workX,
+            WorkY = workY,
             WorkZ = workZ,
+            WorkA = workA,
+            WorkB = workB,
             XLimitPinHigh = xLimitPinHigh,
+            YLimitPinHigh = yLimitPinHigh,
             ZLimitPinHigh = zLimitPinHigh,
             FeedOverridePercent = feedOverridePercent,
             RapidOverridePercent = rapidOverridePercent,
@@ -120,7 +153,7 @@ public static class GrblStatusParser
         return true;
     }
 
-    private static int GetZAxisIndex(double[]? coordinates)
+    private static int ResolveZAxisIndex(double[]? coordinates)
     {
         if (coordinates is null)
         {

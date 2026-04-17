@@ -6,13 +6,27 @@ public sealed record GrblStatus
 
     public double? MachineX { get; init; }
 
+    public double? MachineY { get; init; }
+
     public double? MachineZ { get; init; }
+
+    public double? MachineA { get; init; }
+
+    public double? MachineB { get; init; }
 
     public double? WorkX { get; init; }
 
+    public double? WorkY { get; init; }
+
     public double? WorkZ { get; init; }
 
+    public double? WorkA { get; init; }
+
+    public double? WorkB { get; init; }
+
     public bool XLimitPinHigh { get; init; }
+
+    public bool YLimitPinHigh { get; init; }
 
     public bool ZLimitPinHigh { get; init; }
 
