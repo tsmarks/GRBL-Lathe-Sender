@@ -1,6 +1,6 @@
-# GRBL Lathe Sender
+# GRBL Sender
 
-GRBL Lathe Sender is a simple, touch-friendly interface for driving and controlling GRBL-powered machines.
+GRBL Sender is a simple, touch-friendly interface for driving and controlling GRBL-powered machines.
 
 It started as a lathe-focused sender and now also includes an in-progress mill mode in the same executable.
 
@@ -26,8 +26,8 @@ Running the executable with no arguments opens the mode selector.
 
 Supported arguments:
 
-- `GRBL Lathe Sender.exe lathe`: start directly in lathe mode
-- `GRBL Lathe Sender.exe mill`: start directly in mill mode
+- `GRBL Sender.exe lathe`: start directly in lathe mode
+- `GRBL Sender.exe mill`: start directly in mill mode
 
 These arguments make it easy to create dedicated shortcuts for each machine.
 

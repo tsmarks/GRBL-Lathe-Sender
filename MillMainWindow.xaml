@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:GRBL_Lathe_Control.Controls"
         mc:Ignorable="d"
-        Title="GRBL Mill Sender"
+        Title="GRBL Sender - Mill"
         Width="1580"
         Height="980"
         MinWidth="1320"
@@ -43,7 +43,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="GRBL Mill Sender" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                    <TextBlock Text="GRBL Sender" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
                     <TextBlock Text="Shared GRBL core with a mill-specific 5-axis UI, XY preview, touch-friendly jog controls, and a tool probe workflow."
                                Style="{StaticResource LabelTextStyle}"
                                TextWrapping="Wrap"

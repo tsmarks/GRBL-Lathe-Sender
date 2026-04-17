@@ -12,22 +12,34 @@ public sealed record ToolOffsetStorageEntry(int ToolNumber, string XOffsetInput,
 public static class ToolOffsetStorage
 {
     private const string HeaderLine = "ToolNumber,XOffset,ZOffset";
+    private const string CurrentAppDataFolderName = "GRBL Sender";
+    private const string LegacyAppDataFolderName = "GRBL Lathe Control";
 
     public static string FilePath =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "GRBL Lathe Control",
+            CurrentAppDataFolderName,
+            "tools.csv");
+
+    private static string LegacyFilePath =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            LegacyAppDataFolderName,
             "tools.csv");
 
     public static IReadOnlyList<ToolOffsetStorageEntry> Load()
     {
-        if (!File.Exists(FilePath))
+        var sourceFilePath = File.Exists(FilePath)
+            ? FilePath
+            : LegacyFilePath;
+
+        if (!File.Exists(sourceFilePath))
         {
             return [];
         }
 
         var entries = new List<ToolOffsetStorageEntry>();
-        foreach (var line in File.ReadLines(FilePath))
+        foreach (var line in File.ReadLines(sourceFilePath))
         {
             if (string.IsNullOrWhiteSpace(line))
             {

@@ -49,7 +49,7 @@
                 </Grid>
 
                 <TextBlock Grid.Row="3"
-                           Text="Suggested shortcuts: `GRBL Lathe Sender.exe lathe` and `GRBL Lathe Sender.exe mill`."
+                           Text="Suggested shortcuts: `GRBL Sender.exe lathe` and `GRBL Sender.exe mill`."
                            Style="{StaticResource LabelTextStyle}"
                            Margin="0,18,0,0"/>
             </Grid>

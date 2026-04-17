@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:GRBL_Lathe_Control.Controls"
         mc:Ignorable="d"
-        Title="GRBL Lathe Sender - Data Screen"
+        Title="GRBL Sender - Lathe Data Screen"
         Width="1440"
         Height="960"
         MinWidth="1200"

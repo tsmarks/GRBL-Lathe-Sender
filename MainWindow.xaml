@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:GRBL_Lathe_Control.Controls"
         mc:Ignorable="d"
-        Title="GRBL Lathe Sender"
+        Title="GRBL Sender - Lathe"
         Width="1500"
         Height="920"
         MinWidth="1260"
@@ -312,7 +312,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="GRBL Lathe Sender" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
+                    <TextBlock Text="GRBL Sender" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
                     <TextBlock Text="Simple DRO, touch-off, jog, file playback, and 2D X/Z path preview for GRBL-driven lathes."
                                Style="{StaticResource LabelTextStyle}"
                                TextWrapping="Wrap"

@@ -1,13 +1,13 @@
 {
   "profiles": {
-    "GRBL Lathe Sender": {
+    "GRBL Sender": {
       "commandName": "Project"
     },
-    "GRBL Lathe Sender (Lathe)": {
+    "GRBL Sender (Lathe)": {
       "commandName": "Project",
       "commandLineArgs": "lathe"
     },
-    "GRBL Lathe Sender (Mill)": {
+    "GRBL Sender (Mill)": {
       "commandName": "Project",
       "commandLineArgs": "mill"
     }
