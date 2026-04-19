@@ -320,6 +320,51 @@
         </Setter>
     </Style>
 
+    <Style x:Key="FeedOverrideSliderStyle" TargetType="Slider" BasedOn="{StaticResource TouchSliderStyle}">
+        <Setter Property="Height" Value="56"/>
+        <Setter Property="Margin" Value="0,6,0,0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <Border Height="14"
+                                VerticalAlignment="Center"
+                                Background="{StaticResource InputBackgroundBrush}"
+                                BorderBrush="{StaticResource InputBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="7"/>
+                        <Track x:Name="PART_Track"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                               Orientation="{TemplateBinding Orientation}"
+                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                               VerticalAlignment="Center">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource TouchSliderTrackButtonStyle}" Command="Slider.DecreaseLarge"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Width="40" Height="40">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border Background="{StaticResource PrimaryButtonBrush}"
+                                                    BorderBrush="#FDBA74"
+                                                    BorderThickness="2"
+                                                    CornerRadius="20"/>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource TouchSliderTrackButtonStyle}" Command="Slider.IncreaseLarge"/>
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="PreviewTabControlStyle" TargetType="TabControl">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>

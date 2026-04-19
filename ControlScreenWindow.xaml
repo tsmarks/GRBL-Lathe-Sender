@@ -63,7 +63,7 @@
         </Style>
 
         <Style x:Key="LargeDroValueStyle" TargetType="TextBlock" BasedOn="{StaticResource AxisValueStyle}">
-            <Setter Property="FontSize" Value="68"/>
+            <Setter Property="FontSize" Value="44"/>
         </Style>
     </Window.Resources>
 
@@ -177,51 +177,44 @@
                     <ScaleTransform x:Name="ResponsiveScaleTransform"/>
                 </Grid.LayoutTransform>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="206"/>
+                    <RowDefinition Height="190"/>
                     <RowDefinition Height="14"/>
-                    <RowDefinition Height="286"/>
+                    <RowDefinition Height="266"/>
                     <RowDefinition Height="14"/>
-                    <RowDefinition Height="240"/>
+                    <RowDefinition Height="276"/>
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}" Margin="0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="18"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0" Background="#0E1827" CornerRadius="18" Padding="20">
+                    <UniformGrid Columns="2">
+                        <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
                             <StackPanel>
-                                <TextBlock Text="X Axis" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
-                                <Border Style="{StaticResource LimitBadgeStyle}"
-                                        Visibility="{Binding XLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <TextBlock Text="X LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <TextBlock Text="Work Coordinate" Style="{StaticResource LabelTextStyle}" Margin="0,12,0,4"/>
-                                <TextBlock Text="{Binding WorkX, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}"/>
-                                <TextBlock Text="{Binding MachineX, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="18" Margin="0,10,0,0"/>
+                                <WrapPanel VerticalAlignment="Center">
+                                    <TextBlock Text="X Axis" Style="{StaticResource SectionTitleStyle}" FontSize="24" Margin="0,0,8,0"/>
+                                    <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,0,0" VerticalAlignment="Center" Visibility="{Binding XLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="X LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                                    </Border>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding WorkX, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                                <TextBlock Text="{Binding MachineX, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="2" Background="#0E1827" CornerRadius="18" Padding="20">
+                        <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0">
                             <StackPanel>
-                                <TextBlock Text="Z Axis" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
-                                <Border Style="{StaticResource LimitBadgeStyle}"
-                                        Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <Border Style="{StaticResource LimitBadgeStyle}"
-                                        Visibility="{Binding ProbePinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <TextBlock Text="PROBE" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                                </Border>
-                                <TextBlock Text="Work Coordinate" Style="{StaticResource LabelTextStyle}" Margin="0,12,0,4"/>
-                                <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}"/>
-                                <TextBlock Text="{Binding MachineZ, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="18" Margin="0,10,0,0"/>
+                                <WrapPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Z Axis" Style="{StaticResource SectionTitleStyle}" FontSize="24" Margin="0,0,8,0"/>
+                                    <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,0,0" VerticalAlignment="Center" Visibility="{Binding ProbePinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="PROBE" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                                    </Border>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                                <TextBlock Text="{Binding MachineZ, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>
-                    </Grid>
+                    </UniformGrid>
                 </Border>
 
                 <Grid Grid.Row="2">
@@ -374,92 +367,143 @@
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0">
-                        <StackPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
                             <TextBlock Text="Spindle Control" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
-                            <DockPanel Margin="0,14,0,8">
-                                <TextBlock Text="Speed (S)" Style="{StaticResource LabelTextStyle}" Margin="0"/>
-                                <TextBlock Text="{Binding SelectedSpindleSpeedText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="18" FontWeight="SemiBold"/>
-                            </DockPanel>
+                            <Grid Grid.Row="1" Margin="0,12,0,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Speed (S)" Style="{StaticResource LabelTextStyle}" Margin="0"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding SelectedSpindleSpeedText}"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               FontFamily="Consolas"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Margin="12,0,0,0"/>
+                                </Grid>
 
-                                <TextBlock Text="Max S" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center" Margin="0"/>
-                                <TextBox Grid.Column="2"
-                                         Style="{StaticResource TouchTextBoxStyle}"
-                                         Margin="0"
-                                         Text="{Binding SpindleMaxSpeedInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                <Button Grid.Column="4"
-                                        Content="Set Max"
-                                        Style="{StaticResource TouchSecondaryButtonStyle}"
-                                        Margin="0"
-                                        Command="{Binding SetSpindleMaxSpeedCommand}"/>
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Text="Max S" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center" Margin="0"/>
+                                    <TextBox Grid.Column="2"
+                                             Style="{StaticResource TouchTextBoxStyle}"
+                                             Margin="0"
+                                             Text="{Binding SpindleMaxSpeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Button Grid.Column="4"
+                                            Content="Set Max"
+                                            Style="{StaticResource TouchSecondaryButtonStyle}"
+                                            Margin="0"
+                                            Command="{Binding SetSpindleMaxSpeedCommand}"/>
+                                </Grid>
                             </Grid>
 
-                            <Slider Minimum="0"
+                            <Slider Grid.Row="2"
+                                    Minimum="0"
                                     Maximum="{Binding SpindleMaxSpeed}"
                                     TickFrequency="25"
                                     SmallChange="1"
                                     LargeChange="25"
+                                    Margin="0,0,0,10"
                                     Style="{StaticResource TouchSliderStyle}"
                                     IsEnabled="{Binding CanManualSpindleControl}"
                                     Value="{Binding SelectedSpindleSpeed}"/>
 
-                            <UniformGrid Rows="1" Columns="2">
+                            <UniformGrid Grid.Row="3" Rows="1" Columns="2">
                                 <Button Content="Start / Update"
                                         Style="{StaticResource TouchPrimaryButtonStyle}"
-                                        Height="70"
+                                        Height="56"
                                         Command="{Binding ApplySpindleSpeedCommand}"/>
                                 <Button Content="Stop Spindle"
                                         Style="{StaticResource TouchSecondaryButtonStyle}"
                                         Margin="12,0,0,0"
-                                        Height="70"
+                                        Height="56"
                                         Command="{Binding StopSpindleCommand}"/>
                             </UniformGrid>
-                        </StackPanel>
+                        </Grid>
                     </Border>
 
                     <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0">
-                        <StackPanel>
-                            <TextBlock Text="Program / Feed" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
-                            <TextBlock Text="{Binding ProgramSummaryText}" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,12" TextWrapping="Wrap"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="14"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <UniformGrid Rows="1" Columns="3" Margin="0,0,0,18">
+                            <TextBlock Text="Program / Feed" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding ProgramSummaryText}"
+                                       Style="{StaticResource LabelTextStyle}"
+                                       Margin="0,8,0,10"
+                                       TextWrapping="Wrap"/>
+
+                            <UniformGrid Grid.Row="2" Rows="1" Columns="3" Margin="0,0,0,0">
                                 <Button Content="Run"
                                         Style="{StaticResource TouchPrimaryButtonStyle}"
-                                        Height="70"
+                                        Height="56"
                                         Command="{Binding StartProgramCommand}"/>
                                 <Button Content="{Binding PauseResumeLabel}"
                                         Style="{StaticResource TouchSecondaryButtonStyle}"
                                         Margin="12,0,0,0"
-                                        Height="70"
+                                        Height="56"
                                         Command="{Binding PauseResumeProgramCommand}"/>
                                 <Button Content="Stop"
                                         Style="{StaticResource TouchSecondaryButtonStyle}"
                                         Margin="12,0,0,0"
-                                        Height="70"
+                                        Height="56"
                                         Command="{Binding StopProgramCommand}"/>
                             </UniformGrid>
 
-                            <DockPanel Margin="0,0,0,8">
+                            <Grid Grid.Row="4" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
                                 <TextBlock Text="Feed Override" Style="{StaticResource LabelTextStyle}" Margin="0"/>
-                                <TextBlock Text="{Binding FeedOverrideText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="18" FontWeight="SemiBold"/>
-                            </DockPanel>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding FeedOverrideText}"
+                                           Style="{StaticResource BodyTextStyle}"
+                                           FontFamily="Consolas"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Margin="12,0,0,0"/>
+                            </Grid>
 
-                            <Slider Minimum="25"
+                            <Slider Grid.Row="5"
+                                    Minimum="25"
                                     Maximum="200"
                                     TickFrequency="5"
                                     SmallChange="1"
                                     LargeChange="10"
+                                    Style="{StaticResource FeedOverrideSliderStyle}"
                                     IsEnabled="{Binding IsConnected}"
                                     Value="{Binding FeedOverridePercent}"/>
-                        </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>

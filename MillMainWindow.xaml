@@ -402,6 +402,35 @@
                             </StackPanel>
                             <ProgressBar Height="10" Maximum="100" Value="{Binding ProgramProgressPercent, Mode=OneWay}" Margin="0,0,0,10"/>
                             <TextBlock Text="{Binding ProgramProgressText}" Style="{StaticResource BodyTextStyle}"/>
+
+                            <Separator Margin="0,16,0,14" Background="#2B405D"/>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Feed Override" Style="{StaticResource LabelTextStyle}" Margin="0"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding FeedOverrideText}"
+                                           Style="{StaticResource BodyTextStyle}"
+                                           FontFamily="Consolas"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Margin="12,0,0,0"/>
+                            </Grid>
+                            <TextBlock Text="Adjusts G-code feed moves from 25% to 200% of the programmed feed rate."
+                                       Style="{StaticResource LabelTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10"/>
+                            <Slider Minimum="25"
+                                    Maximum="200"
+                                    TickFrequency="5"
+                                    SmallChange="1"
+                                    LargeChange="10"
+                                    Style="{StaticResource FeedOverrideSliderStyle}"
+                                    IsEnabled="{Binding IsConnected}"
+                                    Value="{Binding FeedOverridePercent}"/>
                         </StackPanel>
                     </Border>
 

@@ -7,7 +7,7 @@ namespace GRBL_Lathe_Control;
 public partial class MillControlScreenWindow : Window
 {
     private const double DesignWidth = 1392;
-    private const double DesignHeight = 760;
+    private const double DesignHeight = 780;
 
     public MillControlScreenWindow(MainViewModel viewModel)
     {
