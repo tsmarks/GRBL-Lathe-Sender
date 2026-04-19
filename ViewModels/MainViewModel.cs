@@ -52,6 +52,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _probeFineFeedInput = "25";
     private string _probeRetractInput = "2";
     private string _spindleMaxSpeedInput = "1000";
+    private string _selectedWorkCoordinateSystem = "G54";
     private string _programPath = "No file loaded";
     private double _machineX;
     private double _machineY;
@@ -90,6 +91,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _suppressToolOffsetPersistence;
     private int _activeToolNumber;
     private char _keyboardJogAxis = 'X';
+    private string _lastAppliedWorkCoordinateSystem = string.Empty;
     private double? _millProbeReferenceWorkZ;
     private double? _millLastProbeWorkZ;
 
@@ -169,6 +171,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<double> LinearJogSteps { get; } = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100];
 
     public IReadOnlyList<double> RotaryJogSteps { get; } = [0.1, 0.5, 1, 5, 10, 45, 90];
+
+    public IReadOnlyList<string> WorkCoordinateSystems { get; } = ["G54", "G55", "G56", "G57", "G58", "G59"];
 
     public RelayCommand RefreshPortsCommand { get; }
 
@@ -818,6 +822,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public string SelectedSpindleSpeedText => $"S{SelectedSpindleSpeed} / max S{SpindleMaxSpeed}";
 
+    public string SelectedWorkCoordinateSystem
+    {
+        get => _selectedWorkCoordinateSystem;
+        set
+        {
+            var normalizedValue = NormalizeWorkCoordinateSystem(value);
+            if (SetProperty(ref _selectedWorkCoordinateSystem, normalizedValue))
+            {
+                _lastAppliedWorkCoordinateSystem = string.Empty;
+                PersistMachineSettings();
+            }
+        }
+    }
+
     public int FeedOverridePercent
     {
         get => _feedOverridePercent;
@@ -1117,6 +1135,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ControllerState = "Waiting for status";
             await _grblClient.ConnectAsync(SelectedPort, baudRate);
             IsConnected = true;
+            _lastAppliedWorkCoordinateSystem = string.Empty;
             UpdateFeedOverrideFromController(100);
             XLimitPinHigh = false;
             YLimitPinHigh = false;
@@ -1148,6 +1167,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             _feedOverrideAdjustmentCancellation?.Cancel();
             IsConnected = false;
+            _lastAppliedWorkCoordinateSystem = string.Empty;
             IsProgramRunning = false;
             IsProgramPaused = false;
             XLimitPinHigh = false;
@@ -1292,6 +1312,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
+            await EnsureSelectedWorkCoordinateSystemActiveAsync();
             await _grblClient.MoveToAsync(xValue, yValue, zValue, aValue, bValue, feedRate);
             AddLog(successMessage);
         }
@@ -1310,8 +1331,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            await _grblClient.SetWorkCoordinateOffsetAsync(xValue, yValue, zValue, aValue, bValue);
-            AddLog(BuildOffsetLogMessage(xValue, yValue, zValue, aValue, bValue));
+            await _grblClient.SetWorkCoordinateOffsetAsync(
+                xValue,
+                yValue,
+                zValue,
+                aValue,
+                bValue,
+                workCoordinateSystem: SelectedWorkCoordinateSystem);
+            await EnsureSelectedWorkCoordinateSystemActiveAsync();
+            AddLog(BuildOffsetLogMessage(xValue, yValue, zValue, aValue, bValue, SelectedWorkCoordinateSystem));
 
             if (IsMillMode && zValue.HasValue)
             {
@@ -1411,7 +1439,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 probeFineFeed,
                 probeRetract);
             var workZAdjustment = _millProbeReferenceWorkZ.Value - probeResult.WorkZ;
-            await _grblClient.SetWorkCoordinateOffsetAsync(z: _millProbeReferenceWorkZ.Value);
+            await _grblClient.SetWorkCoordinateOffsetAsync(
+                z: _millProbeReferenceWorkZ.Value,
+                workCoordinateSystem: SelectedWorkCoordinateSystem);
+            await EnsureSelectedWorkCoordinateSystemActiveAsync();
             await ReturnMillProbeToSafeZAsync(safeZ);
 
             var desiredWorkZ = workZBeforeProbe + workZAdjustment;
@@ -1521,6 +1552,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SpindleMaxSpeed = storedSettings.SpindleMaxSpeed > 0 ? storedSettings.SpindleMaxSpeed : 1000;
             SpindleMaxSpeedInput = SpindleMaxSpeed.ToString(CultureInfo.InvariantCulture);
             SelectedSpindleSpeed = storedSettings.SelectedSpindleSpeed;
+            SelectedWorkCoordinateSystem = string.IsNullOrWhiteSpace(storedSettings.SelectedWorkCoordinateSystem)
+                ? "G54"
+                : storedSettings.SelectedWorkCoordinateSystem;
             XJogFeedInput = storedSettings.XJogFeedInput;
             YJogFeedInput = storedSettings.YJogFeedInput;
             ZJogFeedInput = storedSettings.ZJogFeedInput;
@@ -1567,6 +1601,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             MachineSettingsStorage.Save(new MachineSettingsStorageEntry(
                 SelectedSpindleSpeed,
                 SpindleMaxSpeed,
+                SelectedWorkCoordinateSystem,
                 XJogFeedInput,
                 YJogFeedInput,
                 ZJogFeedInput,
@@ -1749,6 +1784,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
+            await EnsureSelectedWorkCoordinateSystemActiveAsync();
             await _grblClient.MoveToAsync(x: 0, y: 0, feedRateMillimetersPerMinute: feedRate);
             AddLog($"Moving to work X 0 / Y 0 at F{feedRate:0.###}.");
         }
@@ -1845,6 +1881,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         IsProgramPaused = false;
         ExecutedProgramLines = 0;
         ProgramProgressPercent = 0;
+        await EnsureSelectedWorkCoordinateSystemActiveAsync();
         AddLog($"Starting program: {_loadedProgram.DisplayName}");
 
         try
@@ -1874,6 +1911,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _programCancellation = null;
             IsProgramRunning = false;
             IsProgramPaused = false;
+            _lastAppliedWorkCoordinateSystem = string.Empty;
             OnPropertyChanged(nameof(ProgramSummaryText));
         }
     }
@@ -1992,6 +2030,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             await _grblClient.SoftResetAsync();
             IsProgramRunning = false;
             IsProgramPaused = false;
+            _lastAppliedWorkCoordinateSystem = string.Empty;
             UpdateFeedOverrideFromController(100);
             ControllerState = "Resetting";
             AddLog(successMessage);
@@ -2283,7 +2322,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var desiredWorkX = WorkX + (targetToolX - currentToolX);
             var desiredWorkZ = WorkZ + (targetToolZ - currentToolZ);
-            await _grblClient.SetWorkCoordinateOffsetAsync(desiredWorkX, desiredWorkZ);
+            await _grblClient.SetWorkCoordinateOffsetAsync(
+                x: desiredWorkX,
+                z: desiredWorkZ,
+                workCoordinateSystem: SelectedWorkCoordinateSystem);
+            await EnsureSelectedWorkCoordinateSystemActiveAsync();
             WorkX = desiredWorkX;
             WorkZ = desiredWorkZ;
             ActiveToolNumber = toolEntry.ToolNumber;
@@ -2641,6 +2684,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return (confirmedMachineZ, confirmedWorkZ);
     }
 
+    private async Task EnsureSelectedWorkCoordinateSystemActiveAsync()
+    {
+        var normalizedWcs = NormalizeWorkCoordinateSystem(SelectedWorkCoordinateSystem);
+        if (string.Equals(_lastAppliedWorkCoordinateSystem, normalizedWcs, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await _grblClient.SelectWorkCoordinateSystemAsync(normalizedWcs);
+        _lastAppliedWorkCoordinateSystem = normalizedWcs;
+        AddLog($"Selected {normalizedWcs} as the active work coordinate system.");
+    }
+
     private bool TryGetMillToolChangeSettings(out double toolChangeX, out double toolChangeY, out double safeZ)
     {
         toolChangeX = 0;
@@ -2721,7 +2777,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return true;
     }
 
-    private static string BuildOffsetLogMessage(double? xValue, double? yValue, double? zValue, double? aValue, double? bValue)
+    private static string BuildOffsetLogMessage(double? xValue, double? yValue, double? zValue, double? aValue, double? bValue, string workCoordinateSystem)
     {
         var parts = new List<string>();
         if (xValue.HasValue)
@@ -2749,9 +2805,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             parts.Add($"B={bValue.Value:0.###}");
         }
 
+        var normalizedWcs = NormalizeWorkCoordinateSystem(workCoordinateSystem);
         return parts.Count == 0
-            ? "Updated work offset."
-            : $"Updated work offset: {string.Join(", ", parts)}";
+            ? $"Updated {normalizedWcs} work offset."
+            : $"Updated {normalizedWcs} work offset: {string.Join(", ", parts)}";
     }
 
     private bool TryParseDouble(string rawValue, string fieldName, out double parsedValue)
@@ -2804,5 +2861,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         return double.TryParse(rawValue, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+    }
+
+    private static string NormalizeWorkCoordinateSystem(string? workCoordinateSystem)
+    {
+        var normalized = string.IsNullOrWhiteSpace(workCoordinateSystem)
+            ? "G54"
+            : workCoordinateSystem.Trim().ToUpperInvariant();
+
+        return normalized is "G54" or "G55" or "G56" or "G57" or "G58" or "G59"
+            ? normalized
+            : "G54";
     }
 }

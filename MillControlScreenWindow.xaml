@@ -8,7 +8,7 @@
         Width="1440"
         Height="960"
         MinWidth="1240"
-        MinHeight="860"
+        MinHeight="700"
         PreviewKeyDown="Window_PreviewKeyDown"
         WindowStartupLocation="CenterScreen">
     <Window.Background>
@@ -96,12 +96,8 @@
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="14"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="10"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}" Margin="0">
@@ -166,54 +162,83 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+        <Grid Grid.Row="2"
+              x:Name="ResponsiveHost"
+              SizeChanged="ResponsiveHost_SizeChanged">
+            <Grid x:Name="ResponsiveContentRoot"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Top"
+                  RenderTransformOrigin="0,0">
+                <Grid.LayoutTransform>
+                    <ScaleTransform x:Name="ResponsiveScaleTransform"/>
+                </Grid.LayoutTransform>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="170"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="360"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="206"/>
+                </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}" Margin="0">
             <UniformGrid Columns="5">
                 <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="X" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
-                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding XLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="X LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                        </Border>
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="X" Style="{StaticResource SectionTitleStyle}" FontSize="24" Margin="0,0,8,0"/>
+                            <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,0,0" VerticalAlignment="Center" Visibility="{Binding XLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="X LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                            </Border>
+                        </WrapPanel>
                         <TextBlock Text="{Binding WorkX, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                        <TextBlock Text="{Binding MachineX, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="Y" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
-                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding YLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="Y LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                        </Border>
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="Y" Style="{StaticResource SectionTitleStyle}" FontSize="24" Margin="0,0,8,0"/>
+                            <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,0,0" VerticalAlignment="Center" Visibility="{Binding YLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Y LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                            </Border>
+                        </WrapPanel>
                         <TextBlock Text="{Binding WorkY, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                        <TextBlock Text="{Binding MachineY, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="Z" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
-                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                        </Border>
-                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding ProbePinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="PROBE" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
-                        </Border>
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="Z" Style="{StaticResource SectionTitleStyle}" FontSize="24" Margin="0,0,8,0"/>
+                            <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                            </Border>
+                            <Border Style="{StaticResource LimitBadgeStyle}" Margin="0,0,0,0" VerticalAlignment="Center" Visibility="{Binding ProbePinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="PROBE" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                            </Border>
+                        </WrapPanel>
                         <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
+                        <TextBlock Text="{Binding MachineZ, StringFormat=Machine \{0:F3\} mm}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0,0,10,0">
                     <StackPanel>
                         <TextBlock Text="A" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
                         <TextBlock Text="{Binding WorkA, StringFormat=\{0:F3\} deg}" Style="{StaticResource LargeDroValueStyle}" Margin="0,20,0,0"/>
+                        <TextBlock Text="{Binding MachineA, StringFormat=Machine \{0:F3\} deg}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="#0E1827" CornerRadius="18" Padding="18" Margin="0">
                     <StackPanel>
                         <TextBlock Text="B" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
                         <TextBlock Text="{Binding WorkB, StringFormat=\{0:F3\} deg}" Style="{StaticResource LargeDroValueStyle}" Margin="0,20,0,0"/>
+                        <TextBlock Text="{Binding MachineB, StringFormat=Machine \{0:F3\} deg}" Style="{StaticResource BodyTextStyle}" FontSize="16" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
             </UniformGrid>
         </Border>
 
-        <Grid Grid.Row="4">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2.2*"/>
                 <ColumnDefinition Width="18"/>
@@ -322,11 +347,14 @@
             </Border>
 
             <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="Auto"/>
@@ -345,7 +373,21 @@
                                TextWrapping="Wrap"
                                Margin="0,6,0,0"/>
 
-                    <Grid Grid.Row="3">
+                    <Grid Grid.Row="3" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="150"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="WCS" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="2"
+                                  Style="{StaticResource TouchComboStyle}"
+                                  ItemsSource="{Binding WorkCoordinateSystems}"
+                                  SelectedItem="{Binding SelectedWorkCoordinateSystem}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="10"/>
@@ -370,7 +412,7 @@
                                 Command="{Binding ZeroXCommand}"/>
                     </Grid>
 
-                    <Grid Grid.Row="5">
+                    <Grid Grid.Row="7">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="10"/>
@@ -395,7 +437,7 @@
                                 Command="{Binding ZeroYCommand}"/>
                     </Grid>
 
-                    <Grid Grid.Row="7">
+                    <Grid Grid.Row="9">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="10"/>
@@ -420,7 +462,7 @@
                                 Command="{Binding ZeroZCommand}"/>
                     </Grid>
 
-                    <Grid Grid.Row="9" Margin="0,10,0,0">
+                    <Grid Grid.Row="11" Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="10"/>
@@ -445,7 +487,7 @@
                                 Command="{Binding ZeroACommand}"/>
                     </Grid>
 
-                    <Grid Grid.Row="11" Margin="0,10,0,0">
+                    <Grid Grid.Row="13" Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="10"/>
@@ -470,10 +512,11 @@
                                 Command="{Binding ZeroBCommand}"/>
                     </Grid>
                 </Grid>
+                </ScrollViewer>
             </Border>
         </Grid>
 
-        <Grid Grid.Row="6">
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="18"/>
@@ -545,6 +588,8 @@
                             Value="{Binding FeedOverridePercent}"/>
                 </StackPanel>
             </Border>
+        </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

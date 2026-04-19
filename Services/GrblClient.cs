@@ -195,9 +195,10 @@ public sealed class GrblClient : IDisposable
         double? z = null,
         double? a = null,
         double? b = null,
+        string workCoordinateSystem = "G54",
         CancellationToken cancellationToken = default)
     {
-        var builder = new StringBuilder("G10 L20 P1");
+        var builder = new StringBuilder($"G10 L20 P{ResolveWorkCoordinateSystemNumber(workCoordinateSystem)}");
 
         if (x.HasValue)
         {
@@ -225,6 +226,11 @@ public sealed class GrblClient : IDisposable
         }
 
         return SendCommandAsync(builder.ToString(), cancellationToken);
+    }
+
+    public Task SelectWorkCoordinateSystemAsync(string workCoordinateSystem, CancellationToken cancellationToken = default)
+    {
+        return SendCommandAsync(NormalizeWorkCoordinateSystem(workCoordinateSystem), cancellationToken);
     }
 
     public Task MoveToMachineAsync(
@@ -563,7 +569,10 @@ public sealed class GrblClient : IDisposable
             line.StartsWith("GRBL", StringComparison.OrdinalIgnoreCase))
         {
             MessageReceived?.Invoke(this, line);
+            return;
         }
+
+        MessageReceived?.Invoke(this, line);
     }
 
     private void CompletePendingResponse(string response)
@@ -638,5 +647,32 @@ public sealed class GrblClient : IDisposable
         }
 
         return commands;
+    }
+
+    private static string NormalizeWorkCoordinateSystem(string workCoordinateSystem)
+    {
+        var normalized = string.IsNullOrWhiteSpace(workCoordinateSystem)
+            ? "G54"
+            : workCoordinateSystem.Trim().ToUpperInvariant();
+
+        return normalized switch
+        {
+            "G54" or "G55" or "G56" or "G57" or "G58" or "G59" => normalized,
+            _ => throw new ArgumentOutOfRangeException(nameof(workCoordinateSystem), "Only G54-G59 work coordinate systems are supported.")
+        };
+    }
+
+    private static int ResolveWorkCoordinateSystemNumber(string workCoordinateSystem)
+    {
+        return NormalizeWorkCoordinateSystem(workCoordinateSystem) switch
+        {
+            "G54" => 1,
+            "G55" => 2,
+            "G56" => 3,
+            "G57" => 4,
+            "G58" => 5,
+            "G59" => 6,
+            _ => 1
+        };
     }
 }

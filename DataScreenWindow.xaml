@@ -9,7 +9,7 @@
         Width="1440"
         Height="960"
         MinWidth="1200"
-        MinHeight="860"
+        MinHeight="680"
         PreviewKeyDown="Window_PreviewKeyDown"
         WindowStartupLocation="CenterScreen">
     <Window.Background>
@@ -99,187 +99,197 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.35*"/>
-                <ColumnDefinition Width="18"/>
-                <ColumnDefinition Width="0.9*"/>
-            </Grid.ColumnDefinitions>
+        <Grid Grid.Row="2"
+              x:Name="ResponsiveHost"
+              SizeChanged="ResponsiveHost_SizeChanged">
+            <Grid x:Name="ResponsiveContentRoot"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Top"
+                  RenderTransformOrigin="0,0">
+                <Grid.LayoutTransform>
+                    <ScaleTransform x:Name="ResponsiveScaleTransform"/>
+                </Grid.LayoutTransform>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.35*"/>
+                    <ColumnDefinition Width="18"/>
+                    <ColumnDefinition Width="0.9*"/>
+                </Grid.ColumnDefinitions>
 
-            <controls:ToolDataPane Grid.Column="0"/>
+                <controls:ToolDataPane Grid.Column="0"/>
 
-            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <Border Style="{StaticResource CardBorderStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Connection" Style="{StaticResource SectionTitleStyle}"/>
-                            <Grid Margin="0,14,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Connection" Style="{StaticResource SectionTitleStyle}"/>
+                                <Grid Margin="0,14,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="COM Port" Style="{StaticResource LabelTextStyle}"/>
-                                    <ComboBox Style="{StaticResource InputComboBoxStyle}"
-                                              ItemsSource="{Binding AvailablePorts}"
-                                              SelectedItem="{Binding SelectedPort}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="COM Port" Style="{StaticResource LabelTextStyle}"/>
+                                        <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                                                  ItemsSource="{Binding AvailablePorts}"
+                                                  SelectedItem="{Binding SelectedPort}"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Baud" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding BaudRateInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Baud" Style="{StaticResource LabelTextStyle}"/>
+                                        <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                                 Margin="0"
+                                                 Text="{Binding BaudRateInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
-                                    <Button Content="Refresh" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding RefreshPortsCommand}"/>
-                                    <Button Content="Connect" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ConnectCommand}"/>
-                                    <Button Content="Disconnect" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding DisconnectCommand}"/>
-                                    <Button Content="Home" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding HomeCommand}"/>
-                                    <Button Content="Reset" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding SoftResetCommand}"/>
-                                </StackPanel>
-                            </Grid>
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Content="Refresh" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding RefreshPortsCommand}"/>
+                                        <Button Content="Connect" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ConnectCommand}"/>
+                                        <Button Content="Disconnect" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding DisconnectCommand}"/>
+                                        <Button Content="Home" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding HomeCommand}"/>
+                                        <Button Content="Reset" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding SoftResetCommand}"/>
+                                    </StackPanel>
+                                </Grid>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Connection Status" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBlock Text="{Binding ConnectionStatus}" Style="{StaticResource BodyTextStyle}" FontSize="14" FontWeight="SemiBold"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Connection Status" Style="{StaticResource LabelTextStyle}"/>
+                                        <TextBlock Text="{Binding ConnectionStatus}" Style="{StaticResource BodyTextStyle}" FontSize="14" FontWeight="SemiBold"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Controller State" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBlock Text="{Binding ControllerState}" Style="{StaticResource BodyTextStyle}" FontSize="14" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{StaticResource CardBorderStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Program" Style="{StaticResource SectionTitleStyle}"/>
-                            <TextBlock Text="{Binding ProgramSummaryText}" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,8" TextWrapping="Wrap"/>
-                            <TextBlock Text="{Binding ProgramPath}" Style="{StaticResource BodyTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,0,0,12"/>
-
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Load Program" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding LoadProgramCommand}"/>
-                                <Button Content="Run" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding StartProgramCommand}"/>
-                                <Button Content="{Binding PauseResumeLabel}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding PauseResumeProgramCommand}"/>
-                                <Button Content="Stop" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding StopProgramCommand}"/>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Controller State" Style="{StaticResource LabelTextStyle}"/>
+                                        <TextBlock Text="{Binding ControllerState}" Style="{StaticResource BodyTextStyle}" FontSize="14" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
+                        </Border>
 
-                            <ProgressBar Height="10"
-                                         Maximum="100"
-                                         Value="{Binding ProgramProgressPercent, Mode=OneWay}"
-                                         Margin="0,14,0,10"/>
-                            <TextBlock Text="{Binding ProgramProgressText}" Style="{StaticResource BodyTextStyle}"/>
-                        </StackPanel>
-                    </Border>
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Program" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="{Binding ProgramSummaryText}" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding ProgramPath}" Style="{StaticResource BodyTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,0,0,12"/>
 
-                    <Border Style="{StaticResource CardBorderStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Work Offsets" Style="{StaticResource SectionTitleStyle}"/>
-                            <Grid Margin="0,14,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Work X" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Load Program" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding LoadProgramCommand}"/>
+                                    <Button Content="Run" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding StartProgramCommand}"/>
+                                    <Button Content="{Binding PauseResumeLabel}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding PauseResumeProgramCommand}"/>
+                                    <Button Content="Stop" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding StopProgramCommand}"/>
                                 </StackPanel>
 
-                                <Button Grid.Column="2"
-                                        Content="Set X"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Margin="0"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding SetWorkXCommand}"/>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Work Z" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-
-                                <Button Grid.Column="2"
-                                        Content="Set Z"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Margin="0"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding SetWorkZCommand}"/>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Touch Diameter" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                             Margin="0"
-                                             Text="{Binding DiameterTouchOffInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-
-                                <Button Grid.Column="2"
-                                        Content="Set X From Dia"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Margin="0"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding SetXFromDiameterCommand}"/>
-                            </Grid>
-
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Zero X" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ZeroXCommand}"/>
-                                <Button Content="Zero Z" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ZeroZCommand}"/>
-                                <Button Content="Zero All" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding ZeroAllCommand}"/>
+                                <ProgressBar Height="10"
+                                             Maximum="100"
+                                             Value="{Binding ProgramProgressPercent, Mode=OneWay}"
+                                             Margin="0,14,0,10"/>
+                                <TextBlock Text="{Binding ProgramProgressText}" Style="{StaticResource BodyTextStyle}"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
 
-                    <Border Style="{StaticResource CardBorderStyle}" Margin="0">
-                        <StackPanel>
-                            <TextBlock Text="Controller Log" Style="{StaticResource SectionTitleStyle}"/>
-                            <ListBox ItemsSource="{Binding ControllerLog}"
-                                     Height="280"
-                                     Margin="0,14,0,0"
-                                     Background="#0C1728"
-                                     BorderBrush="{StaticResource InputBorderBrush}"
-                                     BorderThickness="1"
-                                     Foreground="{StaticResource ValueBrush}"
-                                     FontFamily="Consolas"
-                                     FontSize="12"
-                                     Padding="6"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
+                        <Border Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Work Offsets" Style="{StaticResource SectionTitleStyle}"/>
+                                <Grid Margin="0,14,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Work X" Style="{StaticResource LabelTextStyle}"/>
+                                        <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                                 Margin="0"
+                                                 Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            Content="Set X"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Margin="0"
+                                            VerticalAlignment="Bottom"
+                                            Command="{Binding SetWorkXCommand}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Work Z" Style="{StaticResource LabelTextStyle}"/>
+                                        <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                                 Margin="0"
+                                                 Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            Content="Set Z"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Margin="0"
+                                            VerticalAlignment="Bottom"
+                                            Command="{Binding SetWorkZCommand}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Touch Diameter" Style="{StaticResource LabelTextStyle}"/>
+                                        <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                                 Margin="0"
+                                                 Text="{Binding DiameterTouchOffInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            Content="Set X From Dia"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Margin="0"
+                                            VerticalAlignment="Bottom"
+                                            Command="{Binding SetXFromDiameterCommand}"/>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Zero X" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ZeroXCommand}"/>
+                                    <Button Content="Zero Z" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ZeroZCommand}"/>
+                                    <Button Content="Zero All" Style="{StaticResource SecondaryButtonStyle}" Margin="0" Command="{Binding ZeroAllCommand}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0">
+                            <StackPanel>
+                                <TextBlock Text="Controller Log" Style="{StaticResource SectionTitleStyle}"/>
+                                <ListBox ItemsSource="{Binding ControllerLog}"
+                                         Height="280"
+                                         Margin="0,14,0,0"
+                                         Background="#0C1728"
+                                         BorderBrush="{StaticResource InputBorderBrush}"
+                                         BorderThickness="1"
+                                         Foreground="{StaticResource ValueBrush}"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         Padding="6"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

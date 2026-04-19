@@ -7,6 +7,7 @@ namespace GRBL_Lathe_Control.Services;
 public sealed record MachineSettingsStorageEntry(
     int SelectedSpindleSpeed,
     int SpindleMaxSpeed,
+    string? SelectedWorkCoordinateSystem,
     string XJogFeedInput,
     string YJogFeedInput,
     string ZJogFeedInput,

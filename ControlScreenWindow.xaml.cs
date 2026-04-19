@@ -6,10 +6,14 @@ namespace GRBL_Lathe_Control;
 
 public partial class ControlScreenWindow : Window
 {
+    private const double DesignWidth = 1392;
+    private const double DesignHeight = 760;
+
     public ControlScreenWindow(MainViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel;
+        Loaded += (_, _) => UpdateResponsiveScale();
     }
 
     private void ReturnToSingleScreen_Click(object sender, RoutedEventArgs e)
@@ -23,5 +27,15 @@ public partial class ControlScreenWindow : Window
         {
             e.Handled = true;
         }
+    }
+
+    private void ResponsiveHost_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateResponsiveScale();
+    }
+
+    private void UpdateResponsiveScale()
+    {
+        ResponsiveLayoutHelper.UpdateScale(ResponsiveHost, ResponsiveScaleTransform, DesignWidth, DesignHeight);
     }
 }
