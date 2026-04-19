@@ -156,50 +156,6 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource CardBorderStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Work Offsets" Style="{StaticResource SectionTitleStyle}"/>
-                            <Grid Margin="0,14,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Work X" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}" Margin="0" Text="{Binding WorkXInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-                                <Button Grid.Column="2" Content="Set X" Style="{StaticResource PrimaryButtonStyle}" Margin="0" VerticalAlignment="Bottom" Command="{Binding SetWorkXCommand}"/>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Work Y" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}" Margin="0" Text="{Binding WorkYInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-                                <Button Grid.Column="2" Content="Set Y" Style="{StaticResource PrimaryButtonStyle}" Margin="0" VerticalAlignment="Bottom" Command="{Binding SetWorkYCommand}"/>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Work Z" Style="{StaticResource LabelTextStyle}"/>
-                                    <TextBox Style="{StaticResource InputTextBoxStyle}" Margin="0" Text="{Binding WorkZInput, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-                                <Button Grid.Column="2" Content="Set Z" Style="{StaticResource PrimaryButtonStyle}" Margin="0" VerticalAlignment="Bottom" Command="{Binding SetWorkZCommand}"/>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
                     <Border Style="{StaticResource CardBorderStyle}" Margin="0">
                         <StackPanel>
                             <TextBlock Text="Controller Log" Style="{StaticResource SectionTitleStyle}"/>

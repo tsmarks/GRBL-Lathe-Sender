@@ -45,27 +45,27 @@
         </Style>
 
         <Style x:Key="MillJogPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-            <Setter Property="MinHeight" Value="48"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="14,7"/>
         </Style>
 
         <Style x:Key="MillJogSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="MinHeight" Value="48"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="14,7"/>
         </Style>
 
         <Style x:Key="MillJogComboStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="Padding" Value="10,7"/>
-            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="9,6"/>
+            <Setter Property="MinHeight" Value="40"/>
         </Style>
 
         <Style x:Key="MillJogTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource InputTextBoxStyle}">
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="Padding" Value="10,7"/>
-            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="9,6"/>
+            <Setter Property="MinHeight" Value="40"/>
         </Style>
 
         <Style x:Key="CompactTouchPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
@@ -223,17 +223,14 @@
             <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0">
                 <StackPanel>
                     <TextBlock Text="Manual Jog" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
-                    <TextBlock Text="Touch-friendly 5-axis jog controls."
-                               Style="{StaticResource LabelTextStyle}"
-                               Margin="0,6,0,12"/>
 
-                    <Grid Margin="0,0,0,8">
+                    <Grid Margin="0,0,0,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="118"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -241,18 +238,18 @@
                         <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedXJogStep}"/>
                         <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding XJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2" Margin="0,0,0,0">
-                            <Button Content="-X" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogXNegativeCommand}"/>
-                            <Button Content="+X" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogXPositiveCommand}"/>
+                            <Button Content="-X" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="48" Command="{Binding JogXNegativeCommand}"/>
+                            <Button Content="+X" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="48" Margin="10,0,0,0" Command="{Binding JogXPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,8">
+                    <Grid Margin="0,0,0,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="118"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -260,18 +257,18 @@
                         <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedYJogStep}"/>
                         <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding YJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-Y" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogYNegativeCommand}"/>
-                            <Button Content="+Y" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogYPositiveCommand}"/>
+                            <Button Content="-Y" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="48" Command="{Binding JogYNegativeCommand}"/>
+                            <Button Content="+Y" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="48" Margin="10,0,0,0" Command="{Binding JogYPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,8">
+                    <Grid Margin="0,0,0,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="118"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -279,18 +276,18 @@
                         <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedZJogStep}"/>
                         <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding ZJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-Z" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogZNegativeCommand}"/>
-                            <Button Content="+Z" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogZPositiveCommand}"/>
+                            <Button Content="-Z" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="48" Command="{Binding JogZNegativeCommand}"/>
+                            <Button Content="+Z" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="48" Margin="10,0,0,0" Command="{Binding JogZPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,8">
+                    <Grid Margin="0,0,0,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="118"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -298,8 +295,8 @@
                         <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedAJogStep}"/>
                         <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding AJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-A" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogANegativeCommand}"/>
-                            <Button Content="+A" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogAPositiveCommand}"/>
+                            <Button Content="-A" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="48" Command="{Binding JogANegativeCommand}"/>
+                            <Button Content="+A" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="48" Margin="10,0,0,0" Command="{Binding JogAPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
@@ -307,9 +304,9 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="118"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -317,8 +314,8 @@
                         <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedBJogStep}"/>
                         <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding BJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-B" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogBNegativeCommand}"/>
-                            <Button Content="+B" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogBPositiveCommand}"/>
+                            <Button Content="-B" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="48" Command="{Binding JogBNegativeCommand}"/>
+                            <Button Content="+B" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="48" Margin="10,0,0,0" Command="{Binding JogBPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
                 </StackPanel>
@@ -335,11 +332,15 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Text="Work Offsets" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
                     <TextBlock Grid.Row="1"
-                               Text="Touch-friendly X/Y/Z work offset updates sized to stay visible on a 1080p control screen."
+                               Text="Direct X/Y/Z/A/B work offset updates sized to stay visible on a 1080p control screen."
                                Style="{StaticResource LabelTextStyle}"
                                TextWrapping="Wrap"
                                Margin="0,6,0,0"/>
@@ -418,6 +419,56 @@
                                 Style="{StaticResource CompactTouchSecondaryButtonStyle}"
                                 Command="{Binding ZeroZCommand}"/>
                     </Grid>
+
+                    <Grid Grid.Row="9" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Work A" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource CompactTouchTextBoxStyle}"
+                                 Text="{Binding WorkAInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set A"
+                                Style="{StaticResource CompactTouchPrimaryButtonStyle}"
+                                Command="{Binding SetWorkACommand}"/>
+                        <Button Grid.Column="6"
+                                Content="Zero A"
+                                Style="{StaticResource CompactTouchSecondaryButtonStyle}"
+                                Command="{Binding ZeroACommand}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="11" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Work B" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource CompactTouchTextBoxStyle}"
+                                 Text="{Binding WorkBInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set B"
+                                Style="{StaticResource CompactTouchPrimaryButtonStyle}"
+                                Command="{Binding SetWorkBCommand}"/>
+                        <Button Grid.Column="6"
+                                Content="Zero B"
+                                Style="{StaticResource CompactTouchSecondaryButtonStyle}"
+                                Command="{Binding ZeroBCommand}"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
@@ -489,6 +540,7 @@
                             TickFrequency="5"
                             SmallChange="1"
                             LargeChange="10"
+                            Style="{StaticResource TouchSliderStyle}"
                             IsEnabled="{Binding IsConnected}"
                             Value="{Binding FeedOverridePercent}"/>
                 </StackPanel>
