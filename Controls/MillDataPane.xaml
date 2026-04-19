@@ -70,7 +70,7 @@
 
                     <StackPanel>
                         <TextBlock Text="Tool Probe" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
-                        <TextBlock Text="The mill probe cycle moves to the configured machine-coordinate tool-change X/Y position, drops to the safe machine Z, probes downward onto the touch plate, then sets work Z from the configured touch-plate thickness. You can calibrate that thickness from a reference tool after you have already found work Z zero on the part."
+                        <TextBlock Text="Zero the work with the reference tool first. Then use Calibrate Plate Reference to move to the fixed tool-change plate and probe it automatically. Later tool probes use the difference between the saved reference touch and the newly touched tool to keep work Z aligned."
                                    Style="{StaticResource LabelTextStyle}"
                                    TextWrapping="Wrap"
                                    Margin="0,8,0,0"/>
@@ -93,11 +93,25 @@
                             <TextBox Style="{StaticResource InputTextBoxStyle}"
                                      Margin="0,0,0,10"
                                      Text="{Binding ToolChangeYInput, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Content="Capture Current X / Y"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,0,12"
+                                    ToolTip="Store the current machine X and Y as the tool-change position."
+                                    Command="{Binding CaptureToolChangePositionCommand}"/>
 
                             <TextBlock Text="Safe Z (Machine)" Style="{StaticResource LabelTextStyle}"/>
                             <TextBox Style="{StaticResource InputTextBoxStyle}"
                                      Margin="0,0,0,10"
                                      Text="{Binding ToolChangeSafeZInput, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Probe Start Z (Machine)" Style="{StaticResource LabelTextStyle}"/>
+                            <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                     Margin="0,0,0,10"
+                                     Text="{Binding ProbeStartZInput, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Content="Capture Current Z"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0"
+                                    ToolTip="Store the current machine Z as the probe start Z position."
+                                    Command="{Binding CaptureProbeStartZCommand}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
@@ -111,33 +125,56 @@
                                      Margin="0,0,0,10"
                                      Text="{Binding ProbeFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Text="Retract (mm)" Style="{StaticResource LabelTextStyle}"/>
+                            <TextBlock Text="Fine Probe Feed (mm/min)" Style="{StaticResource LabelTextStyle}"/>
+                            <TextBox Style="{StaticResource InputTextBoxStyle}"
+                                     Margin="0,0,0,10"
+                                     Text="{Binding ProbeFineFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Pull-Off (mm)" Style="{StaticResource LabelTextStyle}"/>
                             <TextBox Style="{StaticResource InputTextBoxStyle}"
                                      Margin="0,0,0,10"
                                      Text="{Binding ProbeRetractInput, UpdateSourceTrigger=PropertyChanged}"/>
-
-                            <TextBlock Text="Touch Plate Thickness (mm)" Style="{StaticResource LabelTextStyle}"/>
-                            <TextBox Style="{StaticResource InputTextBoxStyle}"
-                                     Margin="0"
-                                     Text="{Binding TouchPlateThicknessInput, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock Text="After the reference tool is zeroed on the work, touch the top of the plate and use the calibrate button to capture that displayed work Z."
+                            <TextBlock Text="{Binding MillToolProbeStatusText}"
+                                       Style="{StaticResource LabelTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,0"/>
+                            <TextBlock Text="Tip: the probe cycle now rapids to safe Z, moves to tool-change X/Y, rapids down to Probe Start Z, probes at the coarse feed, pulls off, then probes again at the fine feed. The second touch point is the one used for calibration and tool-length updates."
                                        Style="{StaticResource LabelTextStyle}"
                                        TextWrapping="Wrap"
                                        Margin="0,8,0,0"/>
                         </StackPanel>
                     </Grid>
 
-                    <StackPanel Grid.Row="4" Orientation="Horizontal">
-                        <Button Content="Calibrate Plate From Current Z"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Margin="0,0,12,0"
-                                ToolTip="Capture the current displayed work Z as the touch-plate thickness after zeroing with the reference tool."
-                                Command="{Binding CalibrateTouchPlateThicknessCommand}"/>
-                        <Button Content="Run Tool Probe"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Margin="0"
-                                ToolTip="Move to the tool-change position, probe down to the touch plate, then set work Z from the touch-plate thickness."
-                                Command="{Binding RunToolProbeCommand}"/>
+                    <StackPanel Grid.Row="4">
+                        <WrapPanel>
+                            <Button Content="Go Safe Z"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,12,12"
+                                    ToolTip="Raise to the configured machine safe Z."
+                                    Command="{Binding GoSafeZCommand}"/>
+                            <Button Content="Go To Tool Change"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,12,12"
+                                    ToolTip="Raise to safe Z, then move to the configured machine X/Y tool-change plate position."
+                                    Command="{Binding GoToToolChangeCommand}"/>
+                            <Button Content="Go To X / Y Zero"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,0,12"
+                                    ToolTip="Move in work coordinates to X0 Y0 using the current jog feeds."
+                                    Command="{Binding GoToXYZeroCommand}"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <Button Content="Calibrate Plate Reference"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,12,0"
+                                    ToolTip="Move to the tool-change plate, run the two-stage reference-tool probe cycle, and save the final fine-touch machine Z as the master reference."
+                                    Command="{Binding CalibrateToolProbePlateCommand}"/>
+                            <Button Content="Run Tool Probe"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Margin="0"
+                                    ToolTip="Move to the tool-change plate, run the two-stage tool probe, and adjust work Z from the stored fine-touch reference."
+                                    Command="{Binding RunToolProbeCommand}"/>
+                        </WrapPanel>
                     </StackPanel>
                 </Grid>
             </Border>

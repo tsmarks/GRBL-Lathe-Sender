@@ -33,6 +33,7 @@ public static class GrblStatusParser
         var xLimitPinHigh = false;
         var yLimitPinHigh = false;
         var zLimitPinHigh = false;
+        var probePinHigh = false;
         int? feedOverridePercent = null;
         int? rapidOverridePercent = null;
         int? spindleOverridePercent = null;
@@ -59,6 +60,7 @@ public static class GrblStatusParser
                 xLimitPinHigh = pinState.Contains('X', StringComparison.OrdinalIgnoreCase);
                 yLimitPinHigh = pinState.Contains('Y', StringComparison.OrdinalIgnoreCase);
                 zLimitPinHigh = pinState.Contains('Z', StringComparison.OrdinalIgnoreCase);
+                probePinHigh = pinState.Contains('P', StringComparison.OrdinalIgnoreCase);
             }
             else if (field.StartsWith("Ov:", StringComparison.OrdinalIgnoreCase))
             {
@@ -145,6 +147,7 @@ public static class GrblStatusParser
             XLimitPinHigh = xLimitPinHigh,
             YLimitPinHigh = yLimitPinHigh,
             ZLimitPinHigh = zLimitPinHigh,
+            ProbePinHigh = probePinHigh,
             FeedOverridePercent = feedOverridePercent,
             RapidOverridePercent = rapidOverridePercent,
             SpindleOverridePercent = spindleOverridePercent

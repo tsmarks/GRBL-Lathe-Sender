@@ -44,6 +44,30 @@
             <Setter Property="MinHeight" Value="48"/>
         </Style>
 
+        <Style x:Key="MillJogPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="16,8"/>
+        </Style>
+
+        <Style x:Key="MillJogSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="16,8"/>
+        </Style>
+
+        <Style x:Key="MillJogComboStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="MinHeight" Value="44"/>
+        </Style>
+
+        <Style x:Key="MillJogTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource InputTextBoxStyle}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="MinHeight" Value="44"/>
+        </Style>
+
         <Style x:Key="CompactTouchPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
             <Setter Property="MinHeight" Value="42"/>
             <Setter Property="MinWidth" Value="76"/>
@@ -65,18 +89,18 @@
         </Style>
 
         <Style x:Key="LargeDroValueStyle" TargetType="TextBlock" BasedOn="{StaticResource AxisValueStyle}">
-            <Setter Property="FontSize" Value="48"/>
+            <Setter Property="FontSize" Value="44"/>
         </Style>
     </Window.Resources>
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="14"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="14"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="14"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -130,6 +154,10 @@
                             Style="{StaticResource TouchSecondaryButtonStyle}"
                             Margin="0,0,12,0"
                             Command="{Binding SoftResetCommand}"/>
+                    <Button Content="Unlock"
+                            Style="{StaticResource TouchSecondaryButtonStyle}"
+                            Margin="0,0,12,0"
+                            Command="{Binding UnlockCommand}"/>
                     <Button Content="Single Screen"
                             Style="{StaticResource TouchSecondaryButtonStyle}"
                             Margin="0"
@@ -164,6 +192,9 @@
                         <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
                         </Border>
+                        <Border Style="{StaticResource LimitBadgeStyle}" Visibility="{Binding ProbePinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="PROBE" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                        </Border>
                         <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}" Margin="0,10,0,0"/>
                     </StackPanel>
                 </Border>
@@ -194,9 +225,9 @@
                     <TextBlock Text="Manual Jog" Style="{StaticResource SectionTitleStyle}" FontSize="24"/>
                     <TextBlock Text="Touch-friendly 5-axis jog controls."
                                Style="{StaticResource LabelTextStyle}"
-                               Margin="0,6,0,14"/>
+                               Margin="0,6,0,12"/>
 
-                    <Grid Margin="0,0,0,10">
+                    <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
@@ -207,15 +238,15 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="X" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedXJogStep}"/>
-                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding XJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedXJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding XJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2" Margin="0,0,0,0">
-                            <Button Content="-X" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogXNegativeCommand}"/>
-                            <Button Content="+X" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogXPositiveCommand}"/>
+                            <Button Content="-X" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogXNegativeCommand}"/>
+                            <Button Content="+X" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogXPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,10">
+                    <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
@@ -226,15 +257,15 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Y" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedYJogStep}"/>
-                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding YJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedYJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding YJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-Y" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogYNegativeCommand}"/>
-                            <Button Content="+Y" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogYPositiveCommand}"/>
+                            <Button Content="-Y" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogYNegativeCommand}"/>
+                            <Button Content="+Y" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogYPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,10">
+                    <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
@@ -245,15 +276,15 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Z" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedZJogStep}"/>
-                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding ZJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding LinearJogSteps}" SelectedItem="{Binding SelectedZJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding ZJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-Z" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogZNegativeCommand}"/>
-                            <Button Content="+Z" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogZPositiveCommand}"/>
+                            <Button Content="-Z" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogZNegativeCommand}"/>
+                            <Button Content="+Z" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogZPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,10">
+                    <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="34"/>
                             <ColumnDefinition Width="10"/>
@@ -264,11 +295,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="A" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedAJogStep}"/>
-                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding AJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedAJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding AJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-A" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogANegativeCommand}"/>
-                            <Button Content="+A" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogAPositiveCommand}"/>
+                            <Button Content="-A" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogANegativeCommand}"/>
+                            <Button Content="+A" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogAPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
 
@@ -283,11 +314,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="B" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="20" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="2" Style="{StaticResource TouchComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedBJogStep}"/>
-                        <TextBox Grid.Column="4" Style="{StaticResource TouchTextBoxStyle}" Margin="0" Text="{Binding BJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Grid.Column="2" Style="{StaticResource MillJogComboStyle}" ItemsSource="{Binding RotaryJogSteps}" SelectedItem="{Binding SelectedBJogStep}"/>
+                        <TextBox Grid.Column="4" Style="{StaticResource MillJogTextBoxStyle}" Margin="0" Text="{Binding BJogFeedInput, UpdateSourceTrigger=PropertyChanged}"/>
                         <UniformGrid Grid.Column="6" Rows="1" Columns="2">
-                            <Button Content="-B" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Command="{Binding JogBNegativeCommand}"/>
-                            <Button Content="+B" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding JogBPositiveCommand}"/>
+                            <Button Content="-B" Style="{StaticResource MillJogSecondaryButtonStyle}" Height="56" Command="{Binding JogBNegativeCommand}"/>
+                            <Button Content="+B" Style="{StaticResource MillJogPrimaryButtonStyle}" Height="56" Margin="12,0,0,0" Command="{Binding JogBPositiveCommand}"/>
                         </UniformGrid>
                     </Grid>
                 </StackPanel>
@@ -405,17 +436,37 @@
                         <TextBlock Text="Speed (S)" Style="{StaticResource LabelTextStyle}" Margin="0"/>
                         <TextBlock Text="{Binding SelectedSpindleSpeedText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="18" FontWeight="SemiBold"/>
                     </DockPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Max S" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center" Margin="0"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource TouchTextBoxStyle}"
+                                 Margin="0"
+                                 Text="{Binding SpindleMaxSpeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set Max"
+                                Style="{StaticResource TouchSecondaryButtonStyle}"
+                                Margin="0"
+                                Command="{Binding SetSpindleMaxSpeedCommand}"/>
+                    </Grid>
                     <Slider Minimum="0"
-                            Maximum="1000"
+                            Maximum="{Binding SpindleMaxSpeed}"
                             TickFrequency="25"
                             SmallChange="1"
                             LargeChange="25"
+                            Style="{StaticResource TouchSliderStyle}"
                             IsEnabled="{Binding CanManualSpindleControl}"
-                            Value="{Binding SelectedSpindleSpeed}"
-                            Margin="0,0,0,16"/>
+                            Value="{Binding SelectedSpindleSpeed}"/>
                     <UniformGrid Rows="1" Columns="2">
-                        <Button Content="Start / Update" Style="{StaticResource TouchPrimaryButtonStyle}" Height="70" Command="{Binding ApplySpindleSpeedCommand}"/>
-                        <Button Content="Stop Spindle" Style="{StaticResource TouchSecondaryButtonStyle}" Height="70" Margin="12,0,0,0" Command="{Binding StopSpindleCommand}"/>
+                        <Button Content="Start / Update" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Command="{Binding ApplySpindleSpeedCommand}"/>
+                        <Button Content="Stop Spindle" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding StopSpindleCommand}"/>
                     </UniformGrid>
                 </StackPanel>
             </Border>
@@ -425,9 +476,9 @@
                     <TextBlock Text="Program / Feed" Style="{StaticResource SectionTitleStyle}" FontSize="22"/>
                     <TextBlock Text="{Binding ProgramSummaryText}" Style="{StaticResource LabelTextStyle}" Margin="0,10,0,12" TextWrapping="Wrap"/>
                     <UniformGrid Rows="1" Columns="3" Margin="0,0,0,18">
-                        <Button Content="Run" Style="{StaticResource TouchPrimaryButtonStyle}" Height="70" Command="{Binding StartProgramCommand}"/>
-                        <Button Content="{Binding PauseResumeLabel}" Style="{StaticResource TouchSecondaryButtonStyle}" Height="70" Margin="12,0,0,0" Command="{Binding PauseResumeProgramCommand}"/>
-                        <Button Content="Stop" Style="{StaticResource TouchSecondaryButtonStyle}" Height="70" Margin="12,0,0,0" Command="{Binding StopProgramCommand}"/>
+                        <Button Content="Run" Style="{StaticResource TouchPrimaryButtonStyle}" Height="64" Command="{Binding StartProgramCommand}"/>
+                        <Button Content="{Binding PauseResumeLabel}" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding PauseResumeProgramCommand}"/>
+                        <Button Content="Stop" Style="{StaticResource TouchSecondaryButtonStyle}" Height="64" Margin="12,0,0,0" Command="{Binding StopProgramCommand}"/>
                     </UniformGrid>
                     <DockPanel Margin="0,0,0,8">
                         <TextBlock Text="Feed Override" Style="{StaticResource LabelTextStyle}" Margin="0"/>

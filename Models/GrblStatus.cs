@@ -30,6 +30,8 @@ public sealed record GrblStatus
 
     public bool ZLimitPinHigh { get; init; }
 
+    public bool ProbePinHigh { get; init; }
+
     public int? FeedOverridePercent { get; init; }
 
     public int? RapidOverridePercent { get; init; }

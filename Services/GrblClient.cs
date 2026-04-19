@@ -344,6 +344,11 @@ public sealed class GrblClient : IDisposable
         return SendRealtimeCommandAsync(0x18);
     }
 
+    public Task UnlockAsync(CancellationToken cancellationToken = default)
+    {
+        return SendCommandAsync("$X", cancellationToken);
+    }
+
     public Task SetSpindleSpeedAsync(int spindleSpeed, CancellationToken cancellationToken = default)
     {
         if (spindleSpeed < 0)
@@ -422,7 +427,8 @@ public sealed class GrblClient : IDisposable
         using var registration = cancellationToken.Register(() => responseCompletion.TrySetCanceled(cancellationToken));
         var response = await responseCompletion.Task.ConfigureAwait(false);
 
-        if (response.StartsWith("error", StringComparison.OrdinalIgnoreCase))
+        if (response.StartsWith("error", StringComparison.OrdinalIgnoreCase) ||
+            response.StartsWith("ALARM", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"{command} failed: {response}");
         }
@@ -541,7 +547,8 @@ public sealed class GrblClient : IDisposable
         }
 
         if (line.Equals("ok", StringComparison.OrdinalIgnoreCase) ||
-            line.StartsWith("error", StringComparison.OrdinalIgnoreCase))
+            line.StartsWith("error", StringComparison.OrdinalIgnoreCase) ||
+            line.StartsWith("ALARM", StringComparison.OrdinalIgnoreCase))
         {
             CompletePendingResponse(line);
             if (!line.Equals("ok", StringComparison.OrdinalIgnoreCase))
@@ -552,8 +559,7 @@ public sealed class GrblClient : IDisposable
             return;
         }
 
-        if (line.StartsWith("ALARM", StringComparison.OrdinalIgnoreCase) ||
-            line.StartsWith("[", StringComparison.OrdinalIgnoreCase) ||
+        if (line.StartsWith("[", StringComparison.OrdinalIgnoreCase) ||
             line.StartsWith("GRBL", StringComparison.OrdinalIgnoreCase))
         {
             MessageReceived?.Invoke(this, line);

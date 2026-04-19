@@ -158,6 +158,10 @@
                             Style="{StaticResource TouchSecondaryButtonStyle}"
                             Margin="0,0,12,0"
                             Command="{Binding SoftResetCommand}"/>
+                    <Button Content="Unlock"
+                            Style="{StaticResource TouchSecondaryButtonStyle}"
+                            Margin="0,0,12,0"
+                            Command="{Binding UnlockCommand}"/>
                     <Button Content="Single Screen"
                             Style="{StaticResource TouchSecondaryButtonStyle}"
                             Margin="0"
@@ -193,6 +197,10 @@
                         <Border Style="{StaticResource LimitBadgeStyle}"
                                 Visibility="{Binding ZLimitPinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Z LIMIT" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
+                        </Border>
+                        <Border Style="{StaticResource LimitBadgeStyle}"
+                                Visibility="{Binding ProbePinHigh, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="PROBE" Foreground="{StaticResource SectionTitleBrush}" FontFamily="Bahnschrift" FontSize="13" FontWeight="Bold"/>
                         </Border>
                         <TextBlock Text="Work Coordinate" Style="{StaticResource LabelTextStyle}" Margin="0,12,0,4"/>
                         <TextBlock Text="{Binding WorkZ, StringFormat=\{0:F3\} mm}" Style="{StaticResource LargeDroValueStyle}"/>
@@ -357,14 +365,35 @@
                         <TextBlock Text="{Binding SelectedSpindleSpeedText}" Style="{StaticResource BodyTextStyle}" FontFamily="Consolas" FontSize="18" FontWeight="SemiBold"/>
                     </DockPanel>
 
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Max S" Style="{StaticResource LabelTextStyle}" VerticalAlignment="Center" Margin="0"/>
+                        <TextBox Grid.Column="2"
+                                 Style="{StaticResource TouchTextBoxStyle}"
+                                 Margin="0"
+                                 Text="{Binding SpindleMaxSpeedInput, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="4"
+                                Content="Set Max"
+                                Style="{StaticResource TouchSecondaryButtonStyle}"
+                                Margin="0"
+                                Command="{Binding SetSpindleMaxSpeedCommand}"/>
+                    </Grid>
+
                     <Slider Minimum="0"
-                            Maximum="1000"
+                            Maximum="{Binding SpindleMaxSpeed}"
                             TickFrequency="25"
                             SmallChange="1"
                             LargeChange="25"
+                            Style="{StaticResource TouchSliderStyle}"
                             IsEnabled="{Binding CanManualSpindleControl}"
-                            Value="{Binding SelectedSpindleSpeed}"
-                            Margin="0,0,0,16"/>
+                            Value="{Binding SelectedSpindleSpeed}"/>
 
                     <UniformGrid Rows="1" Columns="2">
                         <Button Content="Start / Update"

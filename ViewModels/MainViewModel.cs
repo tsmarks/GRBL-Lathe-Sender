@@ -46,10 +46,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _toolChangeXInput = "0";
     private string _toolChangeYInput = "0";
     private string _toolChangeSafeZInput = "0";
+    private string _probeStartZInput = "0";
     private string _probeTravelInput = "50";
     private string _probeFeedInput = "100";
+    private string _probeFineFeedInput = "25";
     private string _probeRetractInput = "2";
-    private string _touchPlateThicknessInput = "10";
+    private string _spindleMaxSpeedInput = "1000";
     private string _programPath = "No file loaded";
     private double _machineX;
     private double _machineY;
@@ -64,6 +66,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _xLimitPinHigh;
     private bool _yLimitPinHigh;
     private bool _zLimitPinHigh;
+    private bool _probePinHigh;
     private bool _isConnected;
     private bool _isProgramRunning;
     private bool _isProgramPaused;
@@ -72,6 +75,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private double _selectedZJogStep = 1;
     private double _selectedAJogStep = 1;
     private double _selectedBJogStep = 1;
+    private int _spindleMaxSpeed = 1000;
     private int _selectedSpindleSpeed = 500;
     private int _feedOverridePercent = 100;
     private int _lastKnownFeedOverridePercent = 100;
@@ -82,9 +86,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _feedOverrideAdjustmentCancellation;
     private bool _isKeyboardControlEnabled;
     private bool _isToolOffsetsLocked = true;
+    private bool _suppressMachineSettingsPersistence;
     private bool _suppressToolOffsetPersistence;
     private int _activeToolNumber;
     private char _keyboardJogAxis = 'X';
+    private double? _millProbeReferenceWorkZ;
+    private double? _millLastProbeWorkZ;
 
     public MainViewModel(MachineMode machineMode = MachineMode.Lathe)
     {
@@ -101,6 +108,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ZeroAllCommand = new AsyncRelayCommand(() => SetWorkCoordinateAsync(xValue: 0, zValue: 0), CanOffsetOrJog);
         HomeCommand = new AsyncRelayCommand(HomeAsync, CanOffsetOrJog);
         SoftResetCommand = new AsyncRelayCommand(SoftResetAsync, () => IsConnected);
+        UnlockCommand = new AsyncRelayCommand(UnlockAsync, () => IsConnected);
+        SetSpindleMaxSpeedCommand = new RelayCommand(SetSpindleMaxSpeed, CanSetSpindleMaxSpeed);
         ApplySpindleSpeedCommand = new AsyncRelayCommand(ApplySpindleSpeedAsync, CanAdjustManualSpindle);
         StopSpindleCommand = new AsyncRelayCommand(StopSpindleAsync, CanAdjustManualSpindle);
         SetWorkXCommand = new AsyncRelayCommand(SetWorkXAsync, CanOffsetOrJog);
@@ -121,7 +130,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         JogANegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("A", -SelectedAJogStep, AJogFeedInput), CanOffsetOrJog);
         JogBPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("B", SelectedBJogStep, BJogFeedInput), CanOffsetOrJog);
         JogBNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("B", -SelectedBJogStep, BJogFeedInput), CanOffsetOrJog);
-        CalibrateTouchPlateThicknessCommand = new RelayCommand(CalibrateTouchPlateThickness, () => IsMillMode && CanOffsetOrJog());
+        CaptureToolChangePositionCommand = new RelayCommand(CaptureToolChangePosition, () => IsMillMode && IsConnected);
+        CaptureProbeStartZCommand = new RelayCommand(CaptureProbeStartZ, () => IsMillMode && IsConnected);
+        GoToToolChangeCommand = new AsyncRelayCommand(GoToToolChangeAsync, () => IsMillMode && CanOffsetOrJog());
+        GoSafeZCommand = new AsyncRelayCommand(GoSafeZAsync, () => IsMillMode && CanOffsetOrJog());
+        GoToXYZeroCommand = new AsyncRelayCommand(GoToXYZeroAsync, () => IsMillMode && CanOffsetOrJog());
+        CalibrateToolProbePlateCommand = new AsyncRelayCommand(CalibrateToolProbePlateAsync, () => IsMillMode && CanOffsetOrJog());
         RunToolProbeCommand = new AsyncRelayCommand(RunToolProbeAsync, () => IsMillMode && CanOffsetOrJog());
         LoadProgramCommand = new RelayCommand(LoadProgram, () => !IsProgramRunning);
         StartProgramCommand = new AsyncRelayCommand(StartProgramAsync, CanStartProgram);
@@ -130,6 +144,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         _grblClient.StatusReceived += OnGrblStatusReceived;
         _grblClient.MessageReceived += OnGrblMessageReceived;
+
+        LoadPersistedMachineSettings();
 
         if (IsLatheMode)
         {
@@ -174,6 +190,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public AsyncRelayCommand SoftResetCommand { get; }
 
+    public AsyncRelayCommand UnlockCommand { get; }
+
+    public RelayCommand SetSpindleMaxSpeedCommand { get; }
+
     public AsyncRelayCommand ApplySpindleSpeedCommand { get; }
 
     public AsyncRelayCommand StopSpindleCommand { get; }
@@ -214,7 +234,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public AsyncRelayCommand JogBNegativeCommand { get; }
 
-    public RelayCommand CalibrateTouchPlateThicknessCommand { get; }
+    public RelayCommand CaptureToolChangePositionCommand { get; }
+
+    public RelayCommand CaptureProbeStartZCommand { get; }
+
+    public AsyncRelayCommand GoToToolChangeCommand { get; }
+
+    public AsyncRelayCommand GoSafeZCommand { get; }
+
+    public AsyncRelayCommand GoToXYZeroCommand { get; }
+
+    public AsyncRelayCommand CalibrateToolProbePlateCommand { get; }
 
     public AsyncRelayCommand RunToolProbeCommand { get; }
 
@@ -383,6 +413,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ? $"Displayed work X {WorkX:0.###} mm | Z {WorkZ:0.###} mm"
         : $"Displayed work X {WorkX:0.###} mm | Y {WorkY:0.###} mm | Z {WorkZ:0.###} mm";
 
+    public string MillToolProbeStatusText
+    {
+        get
+        {
+            if (!IsMillMode)
+            {
+                return string.Empty;
+            }
+
+            if (!_millProbeReferenceWorkZ.HasValue)
+            {
+                return "Plate reference not calibrated for this setup.";
+            }
+
+            if (!_millLastProbeWorkZ.HasValue ||
+                Math.Abs(_millLastProbeWorkZ.Value - _millProbeReferenceWorkZ.Value) < 0.0005d)
+            {
+                return $"Plate reference touch saved at work Z {_millProbeReferenceWorkZ.Value:0.###} mm.";
+            }
+
+            return
+                $"Plate reference work Z {_millProbeReferenceWorkZ.Value:0.###} mm | last probe work Z {_millLastProbeWorkZ.Value:0.###} mm.";
+        }
+    }
+
     public double PreviewHorizontalPosition => IsLatheMode ? WorkZ : WorkX;
 
     public double PreviewVerticalPosition => IsLatheMode ? WorkX : WorkY;
@@ -448,6 +503,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _zLimitPinHigh;
         private set => SetProperty(ref _zLimitPinHigh, value);
+    }
+
+    public bool ProbePinHigh
+    {
+        get => _probePinHigh;
+        private set => SetProperty(ref _probePinHigh, value);
     }
 
     public bool CanManualSpindleControl => IsConnected && !IsProgramRunning;
@@ -558,6 +619,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _xJogFeedInput, value))
             {
                 OnPropertyChanged(nameof(KeyboardFeedText));
+                PersistMachineSettings();
             }
         }
     }
@@ -570,6 +632,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _yJogFeedInput, value))
             {
                 OnPropertyChanged(nameof(KeyboardFeedText));
+                PersistMachineSettings();
             }
         }
     }
@@ -582,6 +645,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _zJogFeedInput, value))
             {
                 OnPropertyChanged(nameof(KeyboardFeedText));
+                PersistMachineSettings();
             }
         }
     }
@@ -594,6 +658,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _aJogFeedInput, value))
             {
                 OnPropertyChanged(nameof(KeyboardFeedText));
+                PersistMachineSettings();
             }
         }
     }
@@ -606,6 +671,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _bJogFeedInput, value))
             {
                 OnPropertyChanged(nameof(KeyboardFeedText));
+                PersistMachineSettings();
             }
         }
     }
@@ -613,43 +679,128 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string ToolChangeXInput
     {
         get => _toolChangeXInput;
-        set => SetProperty(ref _toolChangeXInput, value);
+        set
+        {
+            if (SetProperty(ref _toolChangeXInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
     }
 
     public string ToolChangeYInput
     {
         get => _toolChangeYInput;
-        set => SetProperty(ref _toolChangeYInput, value);
+        set
+        {
+            if (SetProperty(ref _toolChangeYInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
     }
 
     public string ToolChangeSafeZInput
     {
         get => _toolChangeSafeZInput;
-        set => SetProperty(ref _toolChangeSafeZInput, value);
+        set
+        {
+            if (SetProperty(ref _toolChangeSafeZInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
+    }
+
+    public string ProbeStartZInput
+    {
+        get => _probeStartZInput;
+        set
+        {
+            if (SetProperty(ref _probeStartZInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
     }
 
     public string ProbeTravelInput
     {
         get => _probeTravelInput;
-        set => SetProperty(ref _probeTravelInput, value);
+        set
+        {
+            if (SetProperty(ref _probeTravelInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
     }
 
     public string ProbeFeedInput
     {
         get => _probeFeedInput;
-        set => SetProperty(ref _probeFeedInput, value);
+        set
+        {
+            if (SetProperty(ref _probeFeedInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
+    }
+
+    public string ProbeFineFeedInput
+    {
+        get => _probeFineFeedInput;
+        set
+        {
+            if (SetProperty(ref _probeFineFeedInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
     }
 
     public string ProbeRetractInput
     {
         get => _probeRetractInput;
-        set => SetProperty(ref _probeRetractInput, value);
+        set
+        {
+            if (SetProperty(ref _probeRetractInput, value))
+            {
+                PersistMachineSettings();
+            }
+        }
     }
 
-    public string TouchPlateThicknessInput
+    public string SpindleMaxSpeedInput
     {
-        get => _touchPlateThicknessInput;
-        set => SetProperty(ref _touchPlateThicknessInput, value);
+        get => _spindleMaxSpeedInput;
+        set
+        {
+            if (SetProperty(ref _spindleMaxSpeedInput, value))
+            {
+                SetSpindleMaxSpeedCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public int SpindleMaxSpeed
+    {
+        get => _spindleMaxSpeed;
+        private set
+        {
+            var normalizedValue = Math.Max(1, value);
+            if (SetProperty(ref _spindleMaxSpeed, normalizedValue))
+            {
+                if (SelectedSpindleSpeed > normalizedValue)
+                {
+                    SelectedSpindleSpeed = normalizedValue;
+                }
+
+                OnPropertyChanged(nameof(SelectedSpindleSpeedText));
+                PersistMachineSettings();
+            }
+        }
     }
 
     public int SelectedSpindleSpeed
@@ -657,7 +808,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => _selectedSpindleSpeed;
         set
         {
-            var clampedValue = Math.Clamp(value, 0, 1000);
+            var clampedValue = Math.Clamp(value, 0, SpindleMaxSpeed);
             if (SetProperty(ref _selectedSpindleSpeed, clampedValue))
             {
                 OnPropertyChanged(nameof(SelectedSpindleSpeedText));
@@ -665,7 +816,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string SelectedSpindleSpeedText => $"S{SelectedSpindleSpeed}";
+    public string SelectedSpindleSpeedText => $"S{SelectedSpindleSpeed} / max S{SpindleMaxSpeed}";
 
     public int FeedOverridePercent
     {
@@ -695,6 +846,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedXJogStep, value))
             {
                 OnPropertyChanged(nameof(KeyboardStepText));
+                PersistMachineSettings();
             }
         }
     }
@@ -707,6 +859,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedYJogStep, value))
             {
                 OnPropertyChanged(nameof(KeyboardStepText));
+                PersistMachineSettings();
             }
         }
     }
@@ -719,6 +872,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedZJogStep, value))
             {
                 OnPropertyChanged(nameof(KeyboardStepText));
+                PersistMachineSettings();
             }
         }
     }
@@ -731,6 +885,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedAJogStep, value))
             {
                 OnPropertyChanged(nameof(KeyboardStepText));
+                PersistMachineSettings();
             }
         }
     }
@@ -743,6 +898,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedBJogStep, value))
             {
                 OnPropertyChanged(nameof(KeyboardStepText));
+                PersistMachineSettings();
             }
         }
     }
@@ -875,7 +1031,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return IsConnected && !IsProgramRunning;
     }
 
-    private void CalibrateTouchPlateThickness()
+    private async Task CalibrateToolProbePlateAsync()
     {
         if (!IsMillMode)
         {
@@ -884,18 +1040,46 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (!IsConnected)
         {
-            ShowValidationError("Connect to the controller before calibrating the touch plate thickness.");
+            ShowValidationError("Connect to the controller before calibrating the plate reference.");
             return;
         }
 
-        if (WorkZ <= 0)
+        if (!TryGetMillProbeSettings(
+                out var toolChangeX,
+                out var toolChangeY,
+                out var safeZ,
+                out var probeStartZ,
+                out var probeTravel,
+                out var probeFeed,
+                out var probeFineFeed,
+                out var probeRetract))
         {
-            ShowValidationError("Set work Z zero with the reference tool, then touch the top of the plate before calibrating its thickness.");
             return;
         }
 
-        TouchPlateThicknessInput = WorkZ.ToString("0.###", CultureInfo.InvariantCulture);
-        AddLog($"Calibrated touch plate thickness from current work Z: {WorkZ:0.###} mm.");
+        try
+        {
+            AddLog("Starting mill plate-reference calibration probe.");
+            var probeResult = await ExecuteMillProbeCycleAsync(
+                toolChangeX,
+                toolChangeY,
+                safeZ,
+                probeStartZ,
+                probeTravel,
+                probeFeed,
+                probeFineFeed,
+                probeRetract);
+
+            _millProbeReferenceWorkZ = probeResult.WorkZ;
+            _millLastProbeWorkZ = probeResult.WorkZ;
+            OnPropertyChanged(nameof(MillToolProbeStatusText));
+            AddLog($"Calibrated mill plate reference from probe touch at work Z {probeResult.WorkZ:0.###} mm (machine Z {probeResult.MachineZ:0.###} mm).");
+            await ReturnMillProbeToSafeZAsync(safeZ);
+        }
+        catch (Exception exception)
+        {
+            ShowOperationError("Plate reference calibration failed", exception);
+        }
     }
 
     private bool CanStartProgram()
@@ -937,6 +1121,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             XLimitPinHigh = false;
             YLimitPinHigh = false;
             ZLimitPinHigh = false;
+            ProbePinHigh = false;
             ConnectionStatus = $"Connected to {SelectedPort}";
             AddLog($"Connected to {SelectedPort}.");
         }
@@ -968,6 +1153,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             XLimitPinHigh = false;
             YLimitPinHigh = false;
             ZLimitPinHigh = false;
+            ProbePinHigh = false;
             UpdateFeedOverrideFromController(100);
             ConnectionStatus = "Disconnected";
             ControllerState = "Offline";
@@ -1126,6 +1312,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             await _grblClient.SetWorkCoordinateOffsetAsync(xValue, yValue, zValue, aValue, bValue);
             AddLog(BuildOffsetLogMessage(xValue, yValue, zValue, aValue, bValue));
+
+            if (IsMillMode && zValue.HasValue)
+            {
+                ClearMillToolProbeCalibration("Mill plate reference cleared because work Z changed. Recalibrate with the reference tool.");
+            }
         }
         catch (Exception exception)
         {
@@ -1159,6 +1350,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             AddLog(SelectedSpindleSpeed == 0
                 ? "Spindle stopped."
                 : $"Spindle command sent with S{SelectedSpindleSpeed}.");
+            PersistMachineSettings();
         }
         catch (Exception exception)
         {
@@ -1186,33 +1378,49 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (!TryParseDouble(ToolChangeXInput, "tool change X", out var toolChangeX) ||
-            !TryParseDouble(ToolChangeYInput, "tool change Y", out var toolChangeY) ||
-            !TryParseDouble(ToolChangeSafeZInput, "safe Z", out var safeZ) ||
-            !TryParseDouble(ProbeTravelInput, "probe travel", out var probeTravel) ||
-            !TryParseDouble(ProbeFeedInput, "probe feed", out var probeFeed) ||
-            !TryParseDouble(ProbeRetractInput, "probe retract", out var probeRetract) ||
-            !TryParseDouble(TouchPlateThicknessInput, "touch plate thickness", out var touchPlateThickness))
+        if (!_millProbeReferenceWorkZ.HasValue)
         {
+            ShowValidationError("Calibrate the plate reference with the master tool before probing another tool.");
             return;
         }
 
-        if (probeTravel <= 0 || probeFeed <= 0 || probeRetract <= 0 || touchPlateThickness < 0)
+        if (!TryGetMillProbeSettings(
+                out var toolChangeX,
+                out var toolChangeY,
+                out var safeZ,
+                out var probeStartZ,
+                out var probeTravel,
+                out var probeFeed,
+                out var probeFineFeed,
+                out var probeRetract))
         {
-            ShowValidationError("Enter positive probe travel/feed/retract values and a non-negative touch plate thickness.");
             return;
         }
 
         try
         {
             AddLog("Starting mill tool probe cycle.");
-            await _grblClient.MoveToMachineAsync(z: safeZ);
-            await _grblClient.MoveToMachineAsync(x: toolChangeX, y: toolChangeY);
-            await _grblClient.ProbeAxisRelativeAsync("Z", -Math.Abs(probeTravel), probeFeed);
-            await _grblClient.SetWorkCoordinateOffsetAsync(z: touchPlateThickness);
-            WorkZInput = touchPlateThickness.ToString("0.###", CultureInfo.InvariantCulture);
-            await _grblClient.JogAsync("Z", Math.Abs(probeRetract), probeFeed);
-            AddLog($"Tool probe complete. Work Z set to touch plate thickness {touchPlateThickness:0.###} mm.");
+            var workZBeforeProbe = WorkZ;
+            var probeResult = await ExecuteMillProbeCycleAsync(
+                toolChangeX,
+                toolChangeY,
+                safeZ,
+                probeStartZ,
+                probeTravel,
+                probeFeed,
+                probeFineFeed,
+                probeRetract);
+            var workZAdjustment = _millProbeReferenceWorkZ.Value - probeResult.WorkZ;
+            await _grblClient.SetWorkCoordinateOffsetAsync(z: _millProbeReferenceWorkZ.Value);
+            await ReturnMillProbeToSafeZAsync(safeZ);
+
+            var desiredWorkZ = workZBeforeProbe + workZAdjustment;
+            WorkZ = desiredWorkZ;
+            WorkZInput = desiredWorkZ.ToString("0.###", CultureInfo.InvariantCulture);
+            _millLastProbeWorkZ = probeResult.WorkZ;
+            OnPropertyChanged(nameof(MillToolProbeStatusText));
+            AddLog(
+                $"Tool probe complete. Tool touched at work Z {probeResult.WorkZ:0.###} mm (machine Z {probeResult.MachineZ:0.###} mm), so work Z was adjusted by {workZAdjustment:+0.###;-0.###;0} mm. Current work Z is {desiredWorkZ:0.###} mm.");
         }
         catch (Exception exception)
         {
@@ -1278,6 +1486,110 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool CanAddTool()
     {
         return TryParseToolNumber(NewToolNumberInput, out _);
+    }
+
+    private bool CanSetSpindleMaxSpeed()
+    {
+        return TryParsePositiveInt(SpindleMaxSpeedInput, out _);
+    }
+
+    private void SetSpindleMaxSpeed()
+    {
+        if (!TryParsePositiveInt(SpindleMaxSpeedInput, out var spindleMaxSpeed))
+        {
+            ShowValidationError("Enter a positive whole number for spindle max speed.");
+            return;
+        }
+
+        SpindleMaxSpeed = spindleMaxSpeed;
+        SpindleMaxSpeedInput = spindleMaxSpeed.ToString(CultureInfo.InvariantCulture);
+        AddLog($"Spindle max speed set to S{SpindleMaxSpeed}.");
+    }
+
+    private void LoadPersistedMachineSettings()
+    {
+        try
+        {
+            var storedSettings = MachineSettingsStorage.Load();
+            if (storedSettings is null)
+            {
+                return;
+            }
+
+            _suppressMachineSettingsPersistence = true;
+
+            SpindleMaxSpeed = storedSettings.SpindleMaxSpeed > 0 ? storedSettings.SpindleMaxSpeed : 1000;
+            SpindleMaxSpeedInput = SpindleMaxSpeed.ToString(CultureInfo.InvariantCulture);
+            SelectedSpindleSpeed = storedSettings.SelectedSpindleSpeed;
+            XJogFeedInput = storedSettings.XJogFeedInput;
+            YJogFeedInput = storedSettings.YJogFeedInput;
+            ZJogFeedInput = storedSettings.ZJogFeedInput;
+            AJogFeedInput = storedSettings.AJogFeedInput;
+            BJogFeedInput = storedSettings.BJogFeedInput;
+            SelectedXJogStep = storedSettings.SelectedXJogStep > 0 ? storedSettings.SelectedXJogStep : XJogSteps[2];
+            SelectedYJogStep = storedSettings.SelectedYJogStep > 0 ? storedSettings.SelectedYJogStep : LinearJogSteps[2];
+            SelectedZJogStep = storedSettings.SelectedZJogStep > 0 ? storedSettings.SelectedZJogStep : LinearJogSteps[4];
+            SelectedAJogStep = storedSettings.SelectedAJogStep > 0 ? storedSettings.SelectedAJogStep : RotaryJogSteps[2];
+            SelectedBJogStep = storedSettings.SelectedBJogStep > 0 ? storedSettings.SelectedBJogStep : RotaryJogSteps[2];
+            ToolChangeXInput = storedSettings.ToolChangeXInput;
+            ToolChangeYInput = storedSettings.ToolChangeYInput;
+            ToolChangeSafeZInput = storedSettings.ToolChangeSafeZInput;
+            ProbeStartZInput = string.IsNullOrWhiteSpace(storedSettings.ProbeStartZInput)
+                ? storedSettings.ToolChangeSafeZInput
+                : storedSettings.ProbeStartZInput;
+            ProbeTravelInput = storedSettings.ProbeTravelInput;
+            ProbeFeedInput = storedSettings.ProbeFeedInput;
+            ProbeFineFeedInput = string.IsNullOrWhiteSpace(storedSettings.ProbeFineFeedInput)
+                ? storedSettings.ProbeFeedInput
+                : storedSettings.ProbeFineFeedInput;
+            ProbeRetractInput = storedSettings.ProbeRetractInput;
+            AddLog("Loaded persisted machine settings.");
+        }
+        catch (Exception exception)
+        {
+            AddLog($"Machine settings load failed: {exception.Message}");
+        }
+        finally
+        {
+            _suppressMachineSettingsPersistence = false;
+        }
+    }
+
+    private void PersistMachineSettings()
+    {
+        if (_suppressMachineSettingsPersistence)
+        {
+            return;
+        }
+
+        try
+        {
+            MachineSettingsStorage.Save(new MachineSettingsStorageEntry(
+                SelectedSpindleSpeed,
+                SpindleMaxSpeed,
+                XJogFeedInput,
+                YJogFeedInput,
+                ZJogFeedInput,
+                AJogFeedInput,
+                BJogFeedInput,
+                SelectedXJogStep,
+                SelectedYJogStep,
+                SelectedZJogStep,
+                SelectedAJogStep,
+                SelectedBJogStep,
+                ToolChangeXInput,
+                ToolChangeYInput,
+                ToolChangeSafeZInput,
+                ProbeStartZInput,
+                ProbeTravelInput,
+                ProbeFeedInput,
+                ProbeFineFeedInput,
+                ProbeRetractInput));
+        }
+        catch (Exception exception)
+        {
+            AddLog($"Machine settings save failed: {exception.Message}");
+        }
     }
 
     private void LoadPersistedToolOffsets()
@@ -1364,6 +1676,85 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             PersistToolOffsets();
             OnPropertyChanged(nameof(MasterRelativeOffsetText));
+        }
+    }
+
+    private void CaptureToolChangePosition()
+    {
+        if (!IsConnected)
+        {
+            ShowValidationError("Connect to the controller before capturing the tool change X/Y position.");
+            return;
+        }
+
+        ToolChangeXInput = MachineX.ToString("0.###", CultureInfo.InvariantCulture);
+        ToolChangeYInput = MachineY.ToString("0.###", CultureInfo.InvariantCulture);
+        AddLog($"Captured tool change position from current machine X/Y: X {MachineX:0.###}, Y {MachineY:0.###}.");
+    }
+
+    private void CaptureProbeStartZ()
+    {
+        if (!IsConnected)
+        {
+            ShowValidationError("Connect to the controller before capturing the probe start Z position.");
+            return;
+        }
+
+        ProbeStartZInput = MachineZ.ToString("0.###", CultureInfo.InvariantCulture);
+        AddLog($"Captured probe start Z from current machine Z: Z {MachineZ:0.###}.");
+    }
+
+    private async Task GoToToolChangeAsync()
+    {
+        if (!TryGetMillToolChangeSettings(out var toolChangeX, out var toolChangeY, out var safeZ))
+        {
+            return;
+        }
+
+        try
+        {
+            AddLog($"Moving to safe Z {safeZ:0.###} mm and tool change X/Y {toolChangeX:0.###}, {toolChangeY:0.###}.");
+            await MoveToMillToolChangeAsync(toolChangeX, toolChangeY, safeZ);
+        }
+        catch (Exception exception)
+        {
+            ShowOperationError("Go to tool change failed", exception);
+        }
+    }
+
+    private async Task GoSafeZAsync()
+    {
+        if (!TryParseDouble(ToolChangeSafeZInput, "safe Z", out var safeZ))
+        {
+            return;
+        }
+
+        try
+        {
+            AddLog($"Moving to safe Z {safeZ:0.###} mm.");
+            await _grblClient.MoveToMachineAsync(z: safeZ);
+        }
+        catch (Exception exception)
+        {
+            ShowOperationError("Go safe Z failed", exception);
+        }
+    }
+
+    private async Task GoToXYZeroAsync()
+    {
+        if (!TryGetMillPlanarFeedRate(out var feedRate))
+        {
+            return;
+        }
+
+        try
+        {
+            await _grblClient.MoveToAsync(x: 0, y: 0, feedRateMillimetersPerMinute: feedRate);
+            AddLog($"Moving to work X 0 / Y 0 at F{feedRate:0.###}.");
+        }
+        catch (Exception exception)
+        {
+            ShowOperationError("Go to X/Y zero failed", exception);
         }
     }
 
@@ -1577,6 +1968,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private async Task SoftResetAsync()
     {
         await SendSoftResetAsync("Soft reset sent to GRBL.", "Soft reset failed");
+    }
+
+    private async Task UnlockAsync()
+    {
+        try
+        {
+            await _grblClient.UnlockAsync();
+            AddLog("GRBL unlock ($X) sent.");
+        }
+        catch (Exception exception)
+        {
+            ShowOperationError("Unlock failed", exception);
+        }
     }
 
     private async Task SendSoftResetAsync(string successMessage, string errorCaption)
@@ -1968,6 +2372,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             XLimitPinHigh = status.XLimitPinHigh;
             YLimitPinHigh = status.YLimitPinHigh;
             ZLimitPinHigh = status.ZLimitPinHigh;
+            ProbePinHigh = status.ProbePinHigh;
 
             if (status.FeedOverridePercent.HasValue)
             {
@@ -2028,6 +2433,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ZeroAllCommand.RaiseCanExecuteChanged();
         HomeCommand.RaiseCanExecuteChanged();
         SoftResetCommand.RaiseCanExecuteChanged();
+        UnlockCommand.RaiseCanExecuteChanged();
+        SetSpindleMaxSpeedCommand.RaiseCanExecuteChanged();
         ApplySpindleSpeedCommand.RaiseCanExecuteChanged();
         StopSpindleCommand.RaiseCanExecuteChanged();
         SetWorkXCommand.RaiseCanExecuteChanged();
@@ -2048,7 +2455,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         JogANegativeCommand.RaiseCanExecuteChanged();
         JogBPositiveCommand.RaiseCanExecuteChanged();
         JogBNegativeCommand.RaiseCanExecuteChanged();
-        CalibrateTouchPlateThicknessCommand.RaiseCanExecuteChanged();
+        CaptureToolChangePositionCommand.RaiseCanExecuteChanged();
+        CaptureProbeStartZCommand.RaiseCanExecuteChanged();
+        GoToToolChangeCommand.RaiseCanExecuteChanged();
+        GoSafeZCommand.RaiseCanExecuteChanged();
+        GoToXYZeroCommand.RaiseCanExecuteChanged();
+        CalibrateToolProbePlateCommand.RaiseCanExecuteChanged();
         RunToolProbeCommand.RaiseCanExecuteChanged();
         LoadProgramCommand.RaiseCanExecuteChanged();
         StartProgramCommand.RaiseCanExecuteChanged();
@@ -2116,6 +2528,199 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                controllerState.StartsWith("Door", StringComparison.OrdinalIgnoreCase);
     }
 
+    private void ClearMillToolProbeCalibration(string reason)
+    {
+        if (!IsMillMode || (!_millProbeReferenceWorkZ.HasValue && !_millLastProbeWorkZ.HasValue))
+        {
+            return;
+        }
+
+        _millProbeReferenceWorkZ = null;
+        _millLastProbeWorkZ = null;
+        OnPropertyChanged(nameof(MillToolProbeStatusText));
+        AddLog(reason);
+    }
+
+    private async Task MoveToMillToolChangeAsync(double toolChangeX, double toolChangeY, double safeZ)
+    {
+        await _grblClient.MoveToMachineAsync(z: safeZ);
+        await _grblClient.MoveToMachineAsync(x: toolChangeX, y: toolChangeY);
+    }
+
+    private async Task WaitForMillProbeStatusAsync(double startingMachineZ, double startingWorkZ)
+    {
+        const int maxAttempts = 20;
+
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            await Task.Delay(50);
+
+            if ((ProbePinHigh || Math.Abs(MachineZ - startingMachineZ) > 0.0005d) &&
+                Math.Abs(WorkZ - startingWorkZ) > 0.0005d)
+            {
+                return;
+            }
+        }
+
+        AddLog("Probe finished before a fresh status report arrived; using the latest reported position.");
+    }
+
+    private async Task WaitForProbePinStateAsync(bool expectedHigh, string timeoutMessage)
+    {
+        const int maxAttempts = 20;
+
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            if (ProbePinHigh == expectedHigh)
+            {
+                return;
+            }
+
+            await Task.Delay(50);
+        }
+
+        throw new InvalidOperationException(timeoutMessage);
+    }
+
+    private async Task<bool> WaitForMachineZAsync(double expectedMachineZ)
+    {
+        const int maxAttempts = 40;
+
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            if (Math.Abs(MachineZ - expectedMachineZ) <= 0.05d)
+            {
+                return true;
+            }
+
+            await Task.Delay(50);
+        }
+
+        return false;
+    }
+
+    private async Task ReturnMillProbeToSafeZAsync(double safeZ)
+    {
+        await _grblClient.MoveToMachineAsync(z: safeZ);
+        if (!await WaitForMachineZAsync(safeZ))
+        {
+            AddLog("Probe cycle completed, but status did not confirm the return-to-safe-Z move in time.");
+        }
+    }
+
+    private async Task<(double MachineZ, double WorkZ)> ExecuteMillProbeCycleAsync(
+        double toolChangeX,
+        double toolChangeY,
+        double safeZ,
+        double probeStartZ,
+        double probeTravel,
+        double probeFeed,
+        double probeFineFeed,
+        double probeRetract)
+    {
+        await MoveToMillToolChangeAsync(toolChangeX, toolChangeY, safeZ);
+        await _grblClient.MoveToMachineAsync(z: probeStartZ);
+
+        var startingMachineZ = MachineZ;
+        var startingWorkZ = WorkZ;
+        await _grblClient.ProbeAxisRelativeAsync("Z", -Math.Abs(probeTravel), probeFeed);
+        await WaitForMillProbeStatusAsync(startingMachineZ, startingWorkZ);
+
+        var coarseProbeMachineZ = MachineZ;
+        await _grblClient.MoveToMachineAsync(z: coarseProbeMachineZ + Math.Abs(probeRetract));
+        await WaitForProbePinStateAsync(expectedHigh: false, "Probe input stayed active after the first pull-off. Increase pull-off or check the probe plate wiring.");
+
+        var fineProbeStartMachineZ = MachineZ;
+        var fineProbeStartWorkZ = WorkZ;
+        var fineProbeTravel = Math.Max(Math.Abs(probeRetract) * 2d, 1d);
+        await _grblClient.ProbeAxisRelativeAsync("Z", -fineProbeTravel, probeFineFeed);
+        await WaitForMillProbeStatusAsync(fineProbeStartMachineZ, fineProbeStartWorkZ);
+
+        var confirmedMachineZ = MachineZ;
+        var confirmedWorkZ = WorkZ;
+        return (confirmedMachineZ, confirmedWorkZ);
+    }
+
+    private bool TryGetMillToolChangeSettings(out double toolChangeX, out double toolChangeY, out double safeZ)
+    {
+        toolChangeX = 0;
+        toolChangeY = 0;
+        safeZ = 0;
+
+        if (!TryParseDouble(ToolChangeXInput, "tool change X", out toolChangeX) ||
+            !TryParseDouble(ToolChangeYInput, "tool change Y", out toolChangeY) ||
+            !TryParseDouble(ToolChangeSafeZInput, "safe Z", out safeZ))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryGetMillProbeSettings(
+        out double toolChangeX,
+        out double toolChangeY,
+        out double safeZ,
+        out double probeStartZ,
+        out double probeTravel,
+        out double probeFeed,
+        out double probeFineFeed,
+        out double probeRetract)
+    {
+        toolChangeX = 0;
+        toolChangeY = 0;
+        safeZ = 0;
+        probeStartZ = 0;
+        probeTravel = 0;
+        probeFeed = 0;
+        probeFineFeed = 0;
+        probeRetract = 0;
+
+        if (!TryGetMillToolChangeSettings(out toolChangeX, out toolChangeY, out safeZ) ||
+            !TryParseDouble(ProbeStartZInput, "probe start Z", out probeStartZ) ||
+            !TryParseDouble(ProbeTravelInput, "probe travel", out probeTravel) ||
+            !TryParseDouble(ProbeFeedInput, "probe feed", out probeFeed) ||
+            !TryParseDouble(ProbeFineFeedInput, "fine probe feed", out probeFineFeed) ||
+            !TryParseDouble(ProbeRetractInput, "probe retract", out probeRetract))
+        {
+            return false;
+        }
+
+        if (probeTravel <= 0 || probeFeed <= 0 || probeFineFeed <= 0 || probeRetract <= 0)
+        {
+            ShowValidationError("Enter positive probe travel, coarse probe feed, fine probe feed, and pull-off values.");
+            return false;
+        }
+
+        if (probeStartZ > safeZ)
+        {
+            ShowValidationError("Probe start Z should be at or below the safe Z height.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryGetMillPlanarFeedRate(out double feedRate)
+    {
+        if (!TryParseDouble(XJogFeedInput, "X jog feed", out var xFeedRate) ||
+            !TryParseDouble(YJogFeedInput, "Y jog feed", out var yFeedRate))
+        {
+            feedRate = 0;
+            return false;
+        }
+
+        if (xFeedRate <= 0 || yFeedRate <= 0)
+        {
+            ShowValidationError("Enter positive X and Y jog feeds before moving to work X/Y zero.");
+            feedRate = 0;
+            return false;
+        }
+
+        feedRate = Math.Min(xFeedRate, yFeedRate);
+        return true;
+    }
+
     private static string BuildOffsetLogMessage(double? xValue, double? yValue, double? zValue, double? aValue, double? bValue)
     {
         var parts = new List<string>();
@@ -2179,6 +2784,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         toolNumber = 0;
         return false;
+    }
+
+    private static bool TryParsePositiveInt(string rawValue, out int parsedValue)
+    {
+        if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsedValue) && parsedValue > 0)
+        {
+            return true;
+        }
+
+        return int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.CurrentCulture, out parsedValue) && parsedValue > 0;
     }
 
     private static bool TryParseFlexibleDouble(string rawValue, out double value)
