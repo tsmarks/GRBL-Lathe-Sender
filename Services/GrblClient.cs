@@ -132,11 +132,45 @@ public sealed class GrblClient : IDisposable
         }
 
         var normalizedAxis = axisLetter.Trim().ToUpperInvariant();
-        var command = string.Create(
-            CultureInfo.InvariantCulture,
-            $"$J=G91 G21 {normalizedAxis}{distanceMillimeters:0.###} F{feedRateMillimetersPerMinute:0.###}");
+        return normalizedAxis switch
+        {
+            "X" => JogAsync(x: distanceMillimeters, feedRateMillimetersPerMinute: feedRateMillimetersPerMinute, cancellationToken: cancellationToken),
+            "Y" => JogAsync(y: distanceMillimeters, feedRateMillimetersPerMinute: feedRateMillimetersPerMinute, cancellationToken: cancellationToken),
+            "Z" => JogAsync(z: distanceMillimeters, feedRateMillimetersPerMinute: feedRateMillimetersPerMinute, cancellationToken: cancellationToken),
+            "A" => JogAsync(a: distanceMillimeters, feedRateMillimetersPerMinute: feedRateMillimetersPerMinute, cancellationToken: cancellationToken),
+            "B" => JogAsync(b: distanceMillimeters, feedRateMillimetersPerMinute: feedRateMillimetersPerMinute, cancellationToken: cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(axisLetter), $"Unsupported axis '{axisLetter}'.")
+        };
+    }
 
-        return SendCommandAsync(command, cancellationToken);
+    public Task JogAsync(
+        double? x = null,
+        double? y = null,
+        double? z = null,
+        double? a = null,
+        double? b = null,
+        double? feedRateMillimetersPerMinute = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!x.HasValue && !y.HasValue && !z.HasValue && !a.HasValue && !b.HasValue)
+        {
+            throw new ArgumentException("At least one jog axis is required.");
+        }
+
+        if (!feedRateMillimetersPerMinute.HasValue || feedRateMillimetersPerMinute.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(feedRateMillimetersPerMinute), "A positive feed rate is required.");
+        }
+
+        var commandBuilder = new StringBuilder("$J=G91 G21");
+        AppendAxis(commandBuilder, "X", x);
+        AppendAxis(commandBuilder, "Y", y);
+        AppendAxis(commandBuilder, "Z", z);
+        AppendAxis(commandBuilder, "A", a);
+        AppendAxis(commandBuilder, "B", b);
+        commandBuilder.AppendFormat(CultureInfo.InvariantCulture, " F{0:0.###}", feedRateMillimetersPerMinute.Value);
+
+        return SendCommandAsync(commandBuilder.ToString(), cancellationToken);
     }
 
     public Task MoveToAsync(
@@ -377,13 +411,13 @@ public sealed class GrblClient : IDisposable
     public async Task SetFeedOverrideAsync(int targetPercent, int? currentPercent = null, CancellationToken cancellationToken = default)
     {
         var clampedTarget = Math.Clamp(targetPercent, 25, 200);
-        var commands = BuildFeedOverrideCommands(clampedTarget, currentPercent);
+        var commands = BuildFeedOverrideCommands(clampedTarget);
 
         foreach (var command in commands)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await SendRealtimeCommandAsync(command).ConfigureAwait(false);
-            await Task.Delay(5, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(15, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -609,18 +643,15 @@ public sealed class GrblClient : IDisposable
         return -1;
     }
 
-    private static IReadOnlyList<byte> BuildFeedOverrideCommands(int targetPercent, int? currentPercent)
+    private static IReadOnlyList<byte> BuildFeedOverrideCommands(int targetPercent)
     {
         var commands = new List<byte>();
-        var current = currentPercent.HasValue
-            ? Math.Clamp(currentPercent.Value, 10, 200)
-            : 100;
+        var current = 100;
 
-        if (!currentPercent.HasValue || current != 100)
-        {
-            commands.Add(0x90);
-            current = 100;
-        }
+        // Always resync from GRBL's canonical 100% feed override state before
+        // applying incremental override bytes. This avoids relying on host-side
+        // tracking when the controller doesn't report Ov: data or gets out of sync.
+        commands.Add(0x90);
 
         while (current + 10 <= targetPercent)
         {
@@ -674,5 +705,17 @@ public sealed class GrblClient : IDisposable
             "G59" => 6,
             _ => 1
         };
+    }
+
+    private static void AppendAxis(StringBuilder commandBuilder, string axisLetter, double? value)
+    {
+        if (!value.HasValue)
+        {
+            return;
+        }
+
+        commandBuilder.Append(' ');
+        commandBuilder.Append(axisLetter);
+        commandBuilder.Append(value.Value.ToString("0.###", CultureInfo.InvariantCulture));
     }
 }

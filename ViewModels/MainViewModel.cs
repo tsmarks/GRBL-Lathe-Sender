@@ -126,6 +126,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         JogXNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("X", -SelectedXJogStep, XJogFeedInput), CanOffsetOrJog);
         JogYPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("Y", SelectedYJogStep, YJogFeedInput), CanOffsetOrJog);
         JogYNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("Y", -SelectedYJogStep, YJogFeedInput), CanOffsetOrJog);
+        JogXYNorthwestCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, x: -SelectedXYJogStep, y: SelectedXYJogStep), CanOffsetOrJog);
+        JogXYNorthCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, y: SelectedXYJogStep), CanOffsetOrJog);
+        JogXYNortheastCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, x: SelectedXYJogStep, y: SelectedXYJogStep), CanOffsetOrJog);
+        JogXYWestCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, x: -SelectedXYJogStep), CanOffsetOrJog);
+        JogXYEastCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, x: SelectedXYJogStep), CanOffsetOrJog);
+        JogXYSouthwestCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, x: -SelectedXYJogStep, y: -SelectedXYJogStep), CanOffsetOrJog);
+        JogXYSouthCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, y: -SelectedXYJogStep), CanOffsetOrJog);
+        JogXYSoutheastCommand = new AsyncRelayCommand(() => JogAxesAsync("X/Y", XYJogFeedInput, x: SelectedXYJogStep, y: -SelectedXYJogStep), CanOffsetOrJog);
         JogZPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("Z", SelectedZJogStep, ZJogFeedInput), CanOffsetOrJog);
         JogZNegativeCommand = new AsyncRelayCommand(() => JogAxisAsync("Z", -SelectedZJogStep, ZJogFeedInput), CanOffsetOrJog);
         JogAPositiveCommand = new AsyncRelayCommand(() => JogAxisAsync("A", SelectedAJogStep, AJogFeedInput), CanOffsetOrJog);
@@ -225,6 +233,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand JogYPositiveCommand { get; }
 
     public AsyncRelayCommand JogYNegativeCommand { get; }
+
+    public AsyncRelayCommand JogXYNorthwestCommand { get; }
+
+    public AsyncRelayCommand JogXYNorthCommand { get; }
+
+    public AsyncRelayCommand JogXYNortheastCommand { get; }
+
+    public AsyncRelayCommand JogXYWestCommand { get; }
+
+    public AsyncRelayCommand JogXYEastCommand { get; }
+
+    public AsyncRelayCommand JogXYSouthwestCommand { get; }
+
+    public AsyncRelayCommand JogXYSouthCommand { get; }
+
+    public AsyncRelayCommand JogXYSoutheastCommand { get; }
 
     public AsyncRelayCommand JogZPositiveCommand { get; }
 
@@ -622,6 +646,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _xJogFeedInput, value))
             {
+                OnPropertyChanged(nameof(XYJogFeedInput));
                 OnPropertyChanged(nameof(KeyboardFeedText));
                 PersistMachineSettings();
             }
@@ -635,6 +660,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _yJogFeedInput, value))
             {
+                OnPropertyChanged(nameof(XYJogFeedInput));
                 OnPropertyChanged(nameof(KeyboardFeedText));
                 PersistMachineSettings();
             }
@@ -661,6 +687,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _aJogFeedInput, value))
             {
+                OnPropertyChanged(nameof(ABJogFeedInput));
                 OnPropertyChanged(nameof(KeyboardFeedText));
                 PersistMachineSettings();
             }
@@ -674,9 +701,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _bJogFeedInput, value))
             {
+                OnPropertyChanged(nameof(ABJogFeedInput));
                 OnPropertyChanged(nameof(KeyboardFeedText));
                 PersistMachineSettings();
             }
+        }
+    }
+
+    public string XYJogFeedInput
+    {
+        get => XJogFeedInput;
+        set
+        {
+            XJogFeedInput = value;
+            YJogFeedInput = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string ABJogFeedInput
+    {
+        get => AJogFeedInput;
+        set
+        {
+            AJogFeedInput = value;
+            BJogFeedInput = value;
+            OnPropertyChanged();
         }
     }
 
@@ -863,6 +913,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedXJogStep, value))
             {
+                OnPropertyChanged(nameof(SelectedXYJogStep));
                 OnPropertyChanged(nameof(KeyboardStepText));
                 PersistMachineSettings();
             }
@@ -876,6 +927,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedYJogStep, value))
             {
+                OnPropertyChanged(nameof(SelectedXYJogStep));
                 OnPropertyChanged(nameof(KeyboardStepText));
                 PersistMachineSettings();
             }
@@ -902,6 +954,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedAJogStep, value))
             {
+                OnPropertyChanged(nameof(SelectedABJogStep));
                 OnPropertyChanged(nameof(KeyboardStepText));
                 PersistMachineSettings();
             }
@@ -915,9 +968,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedBJogStep, value))
             {
+                OnPropertyChanged(nameof(SelectedABJogStep));
                 OnPropertyChanged(nameof(KeyboardStepText));
                 PersistMachineSettings();
             }
+        }
+    }
+
+    public double SelectedXYJogStep
+    {
+        get => SelectedXJogStep;
+        set
+        {
+            SelectedXJogStep = value;
+            SelectedYJogStep = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double SelectedABJogStep
+    {
+        get => SelectedAJogStep;
+        set
+        {
+            SelectedAJogStep = value;
+            SelectedBJogStep = value;
+            OnPropertyChanged();
         }
     }
 
@@ -1354,19 +1430,51 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task JogAxisAsync(string axisLetter, double distanceMillimeters, string feedRateInput)
     {
-        if (!TryParseDouble(feedRateInput, $"{axisLetter} jog feed", out var feedRate) || feedRate <= 0)
+        await JogAxesAsync(axisLetter, feedRateInput, axisLetter switch
         {
-            ShowValidationError($"Enter a positive jog feed for {axisLetter}.");
+            "X" => distanceMillimeters,
+            _ => null
+        }, axisLetter switch
+        {
+            "Y" => distanceMillimeters,
+            _ => null
+        }, axisLetter switch
+        {
+            "Z" => distanceMillimeters,
+            _ => null
+        }, axisLetter switch
+        {
+            "A" => distanceMillimeters,
+            _ => null
+        }, axisLetter switch
+        {
+            "B" => distanceMillimeters,
+            _ => null
+        });
+    }
+
+    private async Task JogAxesAsync(
+        string axisLabel,
+        string feedRateInput,
+        double? x = null,
+        double? y = null,
+        double? z = null,
+        double? a = null,
+        double? b = null)
+    {
+        if (!TryParseDouble(feedRateInput, $"{axisLabel} jog feed", out var feedRate) || feedRate <= 0)
+        {
+            ShowValidationError($"Enter a positive jog feed for {axisLabel}.");
             return;
         }
 
         try
         {
-            await _grblClient.JogAsync(axisLetter, distanceMillimeters, feedRate);
+            await _grblClient.JogAsync(x: x, y: y, z: z, a: a, b: b, feedRateMillimetersPerMinute: feedRate);
         }
         catch (Exception exception)
         {
-            ShowOperationError($"Jog {axisLetter} failed", exception);
+            ShowOperationError($"Jog {axisLabel} failed", exception);
         }
     }
 
@@ -2492,6 +2600,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         JogXNegativeCommand.RaiseCanExecuteChanged();
         JogYPositiveCommand.RaiseCanExecuteChanged();
         JogYNegativeCommand.RaiseCanExecuteChanged();
+        JogXYNorthwestCommand.RaiseCanExecuteChanged();
+        JogXYNorthCommand.RaiseCanExecuteChanged();
+        JogXYNortheastCommand.RaiseCanExecuteChanged();
+        JogXYWestCommand.RaiseCanExecuteChanged();
+        JogXYEastCommand.RaiseCanExecuteChanged();
+        JogXYSouthwestCommand.RaiseCanExecuteChanged();
+        JogXYSouthCommand.RaiseCanExecuteChanged();
+        JogXYSoutheastCommand.RaiseCanExecuteChanged();
         JogZPositiveCommand.RaiseCanExecuteChanged();
         JogZNegativeCommand.RaiseCanExecuteChanged();
         JogAPositiveCommand.RaiseCanExecuteChanged();
